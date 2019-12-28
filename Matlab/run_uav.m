@@ -91,7 +91,7 @@ for i = 1:3
     hold on, grid on
     title(['Accel-' names{i} ' Control'])
     xlabel('Time [s]')
-    ylabel('Accel [rad/s^2]')
+    ylabel('Accel [m/s^2]')
     plot(t_log, acc_cmd_log(i,:), 'k--')
     plot(t_log, acc_log(i,:), 'b-')
     legend('Setpt', 'Value')
