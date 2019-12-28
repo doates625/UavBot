@@ -2,6 +2,10 @@ classdef UAVModel < handle
     %UAVMODEL Container for UAV model parameters
     %   Author: Dan Oates (WPI Class of 2020)
     
+    properties (Constant)
+        g = [0; 0; 9.807];  % Gravity vector [m/s^2]
+    end
+    
     properties (SetAccess = protected)
         M;      % Mass matrix
         f_min;  % Min prop force [N]
