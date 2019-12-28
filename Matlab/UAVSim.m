@@ -46,42 +46,36 @@ classdef UAVSim < UAVInterface
             %       tz = Heading [rad]
             
             % Simulate controller
-            [q_cmd, acc_cmd] = obj.lap(acc_cmd, tz_cmd);
+            tz_cmd = wrap(tz_cmd, -pi, +pi);
+            [q_cmd, acc_mag] = obj.lap(acc_cmd, tz_cmd);
             alp_cmd = obj.qoc(q_cmd);
-            %{
-            f = obj.frc(alp_cmd, acc_cmd);
+            f = obj.frc(alp_cmd, acc_mag);
             a = obj.model.M \ f;
-            %}
-            f = zeros(4, 1);
-            a = [alp_cmd; acc_cmd];
+            
+            % Compute accel and heading
+            acc = [0; 0; a(4)];
+            acc = obj.q.rotate(acc) - obj.model.g;
+            x_hat = obj.q.rotate([1; 0; 0]);
+            tz = atan2(x_hat(2), x_hat(1));
             
             % Update orientation
-            %{
             if norm(obj.w) > 0
                 q_theta = norm(obj.w) * obj.t_sim;
                 obj.q = obj.q * Quat(obj.w, q_theta);
             end
             alp = a(1:3);
             obj.w = obj.w + alp * obj.t_sim;
-            %}
-            % DEBUG
-            obj.q = q_cmd;
-            obj.w = zeros(3, 1);
             q = obj.q;
             w = obj.w;
-
-            % Compute accel and heading
-            acc = [0; 0; a(4)];
-            acc = obj.q.rotate(acc) - obj.model.g;
-            x_hat = obj.q.rotate([1; 0; 0]);
-            tz = atan2(x_hat(2), x_hat(1));
         end
     end
     
     methods (Access = protected)
-        function [q_cmd, acc_cmd] = lap(obj, acc_cmd, tz_cmd)
+        function [q_cmd, acc_mag] = lap(obj, acc_cmd, tz_cmd)
             %[q_cmd, am_cmd] = LAP(obj, acc_cmd, tz_cmd)
             %   Linear Acceleration Planner
+            
+            % Orientation
             acc_cmd = acc_cmd + obj.model.g;
             qz = Quat([0; 0; 1], tz_cmd);
             norm_acc = norm(acc_cmd);
@@ -97,7 +91,10 @@ classdef UAVSim < UAVInterface
             else
                 q_cmd = qz;
             end
-            acc_cmd = norm_acc;
+            
+            % Acceleration
+            n_hat = obj.q.rotate([0; 0; 1]);
+            acc_mag = acc_cmd(3) / n_hat(3);
         end
         
         function alp_cmd = qoc(obj, q_cmd)
@@ -111,6 +108,8 @@ classdef UAVSim < UAVInterface
         function f = frc(obj, alp_cmd, acc_cmd)
             %f = FRC(obj, alp_cmd, acc_cmd)
             %   Force Regulator Controller
+            
+            % Apply angular limit
             f_alp = obj.M_alp * alp_cmd;
             f_acc = obj.M_acc * acc_cmd;
             p_min = 1;
@@ -122,11 +121,16 @@ classdef UAVSim < UAVInterface
                 else
                     p = 1;
                 end
-                if p < p_min
+                if 0 < p && p < p_min
                     p_min = p;
                 end
             end
             f = p_min * f_alp + f_acc;
+            
+            % Apply clamp limit
+            for i = 1:4
+                f(i) = clamp(f(i), obj.model.f_min, obj.model.f_max);
+            end
         end
     end
 end

@@ -3,7 +3,7 @@ clear, close, clc
 
 %% Settings
 f_sim = 50.0;   % Sim frequency [Hz]
-s_q = -20.0;    % Quat ctrl pole [s^-1]
+s_q = -30.0;    % Quat ctrl pole [s^-1]
 
 %% Simulation
 
@@ -30,13 +30,17 @@ acc_cmd_log(1, t_log >= 4) = 0;
 acc_cmd_log(2, t_log >= 4) = +5;
 acc_cmd_log(2, t_log >= 6) = -5;
 acc_cmd_log(2, t_log >= 8) = 0;
-tz_cmd_log(t_log >= 0) = sin(t_log);
+acc_cmd_log(3, t_log >= 3) = 5;
+acc_cmd_log(3, t_log >= 5) = -5;
+acc_cmd_log(3, t_log >= 7) = 0;
+tz_cmd_log(t_log >= 0) = 0.2 * t_log; % WRAP-AROUND FAILS
 
 % Simulator
 model = UAVModel();
 sim = UAVSim(model, f_sim, s_q);
 
 % Run Simulator
+tz_cmd_log = wrap(tz_cmd_log, -pi, +pi);
 for i = 1:N
     
     % Run simulator
@@ -66,21 +70,6 @@ for i = 1:4
     plot(t_log, q_log(i,:), 'b-')
     legend('Setpt', 'Value')
     ylim([-1, +1])
-end
-
-%% Plot Angular Velocity
-figure
-names = {'x', 'y', 'z'};
-for i = 1:3
-    subplot(3, 1, i)
-    hold on, grid on
-    title(['Omega-' names{i}])
-    xlabel('Time [s]')
-    ylabel('Velocity [rad/s]')
-    plot(t_log, w_log(i,:), 'b-')
-    if max(w_log(i,:)) - min(w_log(i,:)) < 1e-10
-        ylim([-1, +1])
-    end
 end
 
 %% Plot Acceleration
