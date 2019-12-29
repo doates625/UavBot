@@ -95,7 +95,7 @@ classdef UavMatlabSim < UavSim
             % Adjust for gravity
             acc_cmd = acc_cmd + obj.model.g_vec;
             
-            % Acceleration limiting (TODO TEST, UPDATE DOC)
+            % Acceleration limiting (UPDATE DOC)
             acc_cmd(3) = clamp(acc_cmd(3), obj.a_min, obj.a_max);
             norm_xy = norm(acc_cmd(1:2));
             p = sqrt((obj.a_max^2 - acc_cmd(3)^2)) / norm_xy;
@@ -123,6 +123,7 @@ classdef UavMatlabSim < UavSim
             z_hat = [0; 0; 1];
             n_hat = obj.q.rotate(z_hat);
             acc_mag = acc_cmd(3) / n_hat(3);
+            acc_mag = clamp(acc_mag, obj.a_min, obj.a_max);
         end
         
         function alp_cmd = qoc(obj, q_cmd)
