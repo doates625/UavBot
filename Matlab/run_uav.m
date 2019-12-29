@@ -36,7 +36,13 @@ acc_cmd_log(2, t_log >= 8) = 0;
 acc_cmd_log(3, t_log >= 3) = 5;
 acc_cmd_log(3, t_log >= 5) = -5;
 acc_cmd_log(3, t_log >= 7) = 0;
-tz_cmd_log(t_log >= 0) = 0; % pi; % t_log;
+tz_cmd_log(t_log >= 0) = -pi;
+% OK for 0
+% FAILS for +pi/1 - Axis along -y instead of +y
+% FAILS for -pi/1 - Axis along -y instead of +y
+% FAILS for +pi/2 - Axis along -y instead of -x
+% FAILS for -pi/2 - Axis along -y instead of +x
+% WTF is up with axis along -y???
 
 % Simulator
 model = UAVModel();
@@ -92,7 +98,7 @@ ylabel('y')
 zlabel('z')
 plot_q_act = FramePlot3D(1, 'r-', 'g-', 'b-');
 plot_q_cmd = FramePlot3D(1, 'r--', 'g--', 'b--');
-plot_ax_err = VectorPlot3D('c--');
+plot_ax_err = VectorPlot3D('c-');
 plot_w = VectorPlot3D('m--');
 plot_alp_cmd = VectorPlot3D('k--');
 axis([-1, 1, -1, 1, -1, 1])
@@ -110,7 +116,7 @@ for i = 1:N
     w = q.rotate(w_log(:,i));
     
     % Replicate QOC
-    q_err = q_cmd / q;
+    q_err = q_cmd \ q;
     if q_err.w < 0
         q_err = -q_err;
         disp('YOUCH')
@@ -124,6 +130,11 @@ for i = 1:N
     plot_alp_cmd.update(alp_cmd);
     plot_w.update(w);
     plot_ax_err.update(ax);
+    
+    % DEBUG
+    if t_log(i) >= 2
+        pause(0)
+    end
 end
 
 %% Plot Orientation

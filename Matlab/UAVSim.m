@@ -119,13 +119,13 @@ classdef UAVSim < UAVInterface
         function alp_cmd = qoc(obj, q_cmd)
             %alp_cmd = QOC(obj, q_cmd)
             %   Quaternion Orientation Controller
-            q_err = q_cmd / obj.q;
+            q_err = q_cmd \ obj.q;
             if q_err.w < 0
                 % Make error < 180 deg
                 q_err = -q_err; % TODO UPDATE DOC
             end
             q_err = [q_err.x; q_err.y; q_err.z];
-            alp_cmd = obj.k_q * q_err - obj.k_w * obj.w; % TODO UPDATE DOC
+            alp_cmd = -(obj.k_q*q_err + obj.k_w*obj.w);
         end
         
         function f = frc(obj, alp_cmd, acc_cmd)
