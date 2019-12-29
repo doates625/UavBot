@@ -95,10 +95,11 @@ classdef UavMatlabSim < UavSim
             % Adjust for gravity
             acc_cmd = acc_cmd + obj.model.g_vec;
             
-            % Acceleration limiting (UPDATE DOC)
+            % Acceleration limiting
             acc_cmd(3) = clamp(acc_cmd(3), obj.a_min, obj.a_max);
             norm_xy = norm(acc_cmd(1:2));
-            p = sqrt((obj.a_max^2 - acc_cmd(3)^2)) / norm_xy;
+            norm_xy_max = sqrt(obj.a_max^2 - acc_cmd(3)^2);
+            p = norm_xy_max / norm_xy;
             if p < 1
                 acc_cmd(1:2) = p * acc_cmd(1:2);
             end

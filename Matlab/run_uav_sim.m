@@ -30,13 +30,13 @@ f_log = zeros(4, N);
 acc_cmd_log = zeros(3, N);
 tz_cmd_log = zeros(1, N);
 acc_cmd_log(1, t_log >= 0) = +5;
-acc_cmd_log(1, t_log >= 2) = -50;
+acc_cmd_log(1, t_log >= 2) = -20;
 acc_cmd_log(1, t_log >= 4) = 0;
-acc_cmd_log(2, t_log >= 4) = +50;
+acc_cmd_log(2, t_log >= 4) = +20;
 acc_cmd_log(2, t_log >= 6) = -5;
 acc_cmd_log(2, t_log >= 8) = 0;
 acc_cmd_log(3, t_log >= 3) = 5;
-acc_cmd_log(3, t_log >= 5) = -50;
+acc_cmd_log(3, t_log >= 5) = -20;
 acc_cmd_log(3, t_log >= 7) = 0;
 tz_cmd_log(t_log >= 0) = t_log;
 
