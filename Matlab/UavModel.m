@@ -1,11 +1,11 @@
-classdef UAVModel < handle
+classdef UavModel < handle
     %UAVMODEL Container for UAV model parameters
     %   Author: Dan Oates (WPI Class of 2020)
     
     properties (Constant)
         % Gravity [m/s^2]
         g_sca = 9.807;
-        g_vec = [0; 0; UAVModel.g_sca]; 
+        g_vec = [0; 0; UavModel.g_sca]; 
     end
     
     properties (SetAccess = protected)
@@ -30,7 +30,7 @@ classdef UAVModel < handle
     end
     
     methods (Access = public)
-        function obj = UAVModel(...
+        function obj = UavModel(...
                 I_xx, I_yy, I_zz, I_xy, I_xz, I_yz, ...
                 r_xp, r_xn, r_yp, r_yn, r_z, ...
                 mass, f_min, f_max)
@@ -40,7 +40,7 @@ classdef UAVModel < handle
             %   I_xx, I_yy, I_zz, I_xy, I_xz, I_yz, ...
             %   r_xp, r_xn, r_yp, r_yn, r_z, ...
             %   m, f_min, f_max)
-            %   Construct with following params:
+            %   Construct with params:
             %       I_xx = Inertia xx [kg*m^2]
             %       I_yy = IInertia yy [kg*m^2]
             %       I_zz = Inertia zz [kg*m^2]
@@ -56,7 +56,8 @@ classdef UAVModel < handle
             %       f_min = Min prop force [N]
             %       f_max = Max prop force [N]
             %   
-            %obj = UAVMODEL() Construct with default params
+            %obj = UAVMODEL()
+            %   Construct with default params
             
             % Default model
             if nargin == 0

@@ -1,15 +1,13 @@
-classdef UAVSim < UAVInterface
-    %UAVSIMULATOR Simulator for UAV model
+classdef UavMatlabSim < UavSim
+    %UAVMATLABSIM Matlab simulator for UAV model
     %   Author: Dan Oates (WPI Class of 2020)
     
     properties (SetAccess = protected)
-        f_sim   % Sim frequency [Hz]
-        t_sim   % Sim period [s]
+        q;  % Orientation [Quat]
+        w;  % Angular velocity [rad/s]
     end
     
-    properties (GetAccess = protected)
-        q;      % Orientation [Quat]
-        w;      % Angular velocity [rad/s]
+    properties (Access = protected)
         k_q;    % Quaternion gain [rad/s^2]
         k_w;    % Velocity gain [s^-1]
         a_min;  % Min accel cmd [m/s^2]
@@ -17,16 +15,18 @@ classdef UAVSim < UAVInterface
     end
     
     methods (Access = public)
-        function obj = UAVSim(model, f_sim, q_pole, th_min, th_max)
-            %obj = UAVSIM(model, f_sim) Construct UAV simulator
-            %   model = UAV model [UAVModel]
-            %   f_sim = Sim frequency [Hz]
-            %   q_pole = Quat ctrl pole [s^-1]
-            %   th_min = Min thrust ratio [0-1]
-            %   th_max = Max thrust ratio [0-1]
-            obj = obj@UAVInterface(model);
-            obj.f_sim = f_sim;
-            obj.t_sim = 1 / f_sim;
+        function obj = UavMatlabSim(model, f_sim, q_pole, th_min, th_max)
+            %obj = UAVMATLABSIM(model, f_sim, q_pole, th_min, th_max)
+            %   Construct UAV Matlab simulator
+            %   
+            %   Inputs:
+            %       model = UAV model [UAVModel]
+            %       f_sim = Sim frequency [Hz]
+            %       q_pole = Quat ctrl pole [s^-1]
+            %       th_min = Min thrust ratio [0-1]
+            %       th_max = Max thrust ratio [0-1]
+            
+            obj = obj@UavSim(model, f_sim);
             obj.q = Quat();
             obj.w = zeros(3, 1);
             obj.k_q = q_pole^2;
@@ -36,18 +36,20 @@ classdef UAVSim < UAVInterface
             obj.a_max = th_max * acc_max;
         end
         
-        function [q, w, f, acc, tz, q_cmd, alp_cmd, running] = update(obj, acc_cmd, tz_cmd)
-            %[q, w] = UPDATE(acc, tz) Run sim iteration and get state
+        function [q, w, acc, tz, f, stat] = update(obj, acc_cmd, tz_cmd)
+            %[q, w, acc, tz, f, stat] = UPDATE(obj, acc_cmd, tz_cmd)
+            %   Run simulation iteration and get states
+            %   
             %   Inputs:
             %       acc_cmd = Global accel cmd [m/s^2]
             %       tz_cmd = Heading cmd [rad]
             %   Outputs:
-            %       q = New pose [Quat]
-            %       w = New angular velocity [rad/s]
-            %       f = Propeller forces [N]
+            %       q = Orientation [Quat]
+            %       w = Local angular velocity [rad/s]
             %       acc = Global accel [m/s^2]
             %       tz = Heading [rad]
-            %       running = [Bool]
+            %       f = Propeller forces [N]
+            %       stat = Status [0 = OK, 1 = failed]
             
             % Simulate controller
             [q_cmd, acc_mag] = obj.lap(acc_cmd, tz_cmd);
@@ -71,22 +73,29 @@ classdef UAVSim < UAVInterface
             q = obj.q;
             w = obj.w;
             
-            % Check for crash
+            % Check for flip
             z_hat = [0; 0; 1];
             z_hat = obj.q.rotate(z_hat);
-            running = (z_hat(3) > 0);
+            stat = (z_hat(3) < 0);
         end
     end
     
     methods (Access = protected)
         function [q_cmd, acc_mag] = lap(obj, acc_cmd, tz_cmd)
-            %[q_cmd, am_cmd] = LAP(obj, acc_cmd, tz_cmd)
+            %[q_cmd, acc_mag] = LAP(obj, acc_cmd, tz_cmd)
             %   Linear Acceleration Planner
+            %   
+            %   Inputs:
+            %       acc_cmd = Global accel cmd [m/s^2]
+            %       tz_cmd = Heading cmd [rad]
+            %   Outputs:
+            %       q_cmd = Orientation cmd [Quat]
+            %       acc_mag = Accel magnitude [m/s^2]
             
             % Adjust for gravity
             acc_cmd = acc_cmd + obj.model.g_vec;
             
-            % Acceleration limiting (TODO UPDATE DOC)
+            % Acceleration limiting (TODO TEST, UPDATE DOC)
             acc_cmd(3) = clamp(acc_cmd(3), obj.a_min, obj.a_max);
             norm_xy = norm(acc_cmd(1:2));
             p = sqrt((obj.a_max^2 - acc_cmd(3)^2)) / norm_xy;
@@ -119,22 +128,33 @@ classdef UAVSim < UAVInterface
         function alp_cmd = qoc(obj, q_cmd)
             %alp_cmd = QOC(obj, q_cmd)
             %   Quaternion Orientation Controller
+            %   
+            %   Inputs:
+            %       q_cmd = Orientation cmd [Quat]
+            %   Outputs:
+            %       alp_cmd = Local angular accel cmd [rad/s^2]
+            
             q_err = q_cmd \ obj.q;
             if q_err.w < 0
-                % Make error < 180 deg
-                q_err = -q_err; % TODO UPDATE DOC
+                q_err = -q_err;
             end
             q_err = [q_err.x; q_err.y; q_err.z];
             alp_cmd = -(obj.k_q*q_err + obj.k_w*obj.w);
         end
         
-        function f = frc(obj, alp_cmd, acc_cmd)
-            %f = FRC(obj, alp_cmd, acc_cmd)
+        function f = frc(obj, alp_cmd, acc_mag)
+            %f = FRC(obj, alp_cmd, acc_mag)
             %   Force Regulator Controller
+            %   
+            %   Inputs:
+            %       alp_cmd = Local angular accel cmd [rad/s^2]
+            %       acc_mag = Accel magnitude [m/s^2]
+            %   Outputs:
+            %       f = Prop force vector [N] 
             
             % Apply angular limit
             f_alp = obj.model.M_alp * alp_cmd;
-            f_acc = obj.model.M_acc * acc_cmd;
+            f_acc = obj.model.M_acc * acc_mag;
             p_min = 1;
             for i = 1:4
                 if f_alp(i) > 0
