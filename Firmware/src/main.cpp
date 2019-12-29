@@ -7,8 +7,10 @@
 #include <Controller.h>
 #include <Motors.h>
 #include <Bluetooth.h>
+#include <Platform.h>
 #include <DigitalOut.h>
 using Controller::t_ctrl_us;
+using Platform::wait;
 
 /**
  * Global Variables
@@ -18,15 +20,10 @@ DigitalOut led(pin_led);
 IntervalTimer timer;
 
 /**
- * @brief Runs control loop once
+ * Function Templates
  */
-void run_ctrl()
-{
-	led = 1;
-	Imu::update();
-	Controller::update();
-	led = 0;
-}
+void run_ctrl();
+void error(uint8_t n);
 
 /**
  * @brief Arduino setup
@@ -35,7 +32,7 @@ void setup()
 {
 	// Init subsystems
 	led = 1;
-	Imu::init();
+	if (!Imu::init()) error(1);
 	Motors::init();
 	Controller::init();
 	Bluetooth::init();
@@ -51,4 +48,34 @@ void setup()
 void loop()
 {
 	Bluetooth::update();
+}
+
+/**
+ * @brief Runs control loop once
+ */
+void run_ctrl()
+{
+	led = 1;
+	Imu::update();
+	Controller::update();
+	led = 0;
+}
+
+/**
+ * @brief Disables motors and flashes LED n times in a loop
+ */
+void error(uint8_t n)
+{
+	Motors::set_forces(0.0f);
+	while (true)
+	{
+		for (uint8_t i = 0; i < n; i++)
+		{
+			led = 1;
+			Platform::wait(0.10f);
+			led = 0;
+			Platform::wait(0.15f);
+		}
+		Platform::wait(1.0f);
+	}
 }

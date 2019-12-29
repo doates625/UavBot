@@ -4,6 +4,7 @@
  */
 #include "Imu.h"
 #if !defined(SIMULATE_PLANT)
+	#include <Platform.h>
 	#include <BNO055.h>
 #else
 	#include <Simulator.h>
@@ -37,9 +38,10 @@ namespace Imu
 }
 
 /**
- * @brief Initializes IMU
+ * @brief Initializes IMU and waits for calibration
+ * @return True if connection was successful
  */
-void Imu::init()
+bool Imu::init()
 {
 	if (!init_complete)
 	{
@@ -51,8 +53,12 @@ void Imu::init()
 			wire->setSCL(pin_scl);
 
 			// Init BNO055
-			bno055.init();
-			// TODO check for compass lock
+			Platform::wait(0.1);
+			if (!bno055.init())
+			{
+				return false;
+			}
+			while (!bno055.calibrated());
 
 			// Init readings
 			heading = 0.0f;
@@ -64,6 +70,7 @@ void Imu::init()
 		// Set init flag
 		init_complete = true;
 	}
+	return true;
 }
 
 /**

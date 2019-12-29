@@ -12,7 +12,7 @@
  */
 namespace Imu
 {
-	void init();
+	bool init();
 	void update();
 	const Quat& get_quat();
 	const Vector<3>& get_omega();
