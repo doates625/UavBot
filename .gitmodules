@@ -1,0 +1,36 @@
+[submodule "Firmware/lib/SerialServer"]
+	path = Firmware/lib/SerialServer
+	url = https://github.com/doates625/SerialServer.git
+[submodule "Firmware/lib/Platform"]
+	path = Firmware/lib/Platform
+	url = https://github.com/doates625/Platform.git
+[submodule "Firmware/lib/Timer"]
+	path = Firmware/lib/Timer
+	url = https://github.com/doates625/Timer.git
+[submodule "Firmware/lib/LinearCpp"]
+	path = Firmware/lib/LinearCpp
+	url = https://github.com/doates625/LinearCpp.git
+[submodule "Firmware/lib/QuatCpp"]
+	path = Firmware/lib/QuatCpp
+	url = https://github.com/doates625/QuatCpp.git
+[submodule "Firmware/lib/ServoOut"]
+	path = Firmware/lib/ServoOut
+	url = https://github.com/doates625/ServoOut.git
+[submodule "Firmware/lib/CppUtil"]
+	path = Firmware/lib/CppUtil
+	url = https://github.com/doates625/CppUtil.git
+[submodule "Firmware/lib/BNO055"]
+	path = Firmware/lib/BNO055
+	url = https://github.com/doates625/BNO055.git
+[submodule "Firmware/lib/I2CDevice"]
+	path = Firmware/lib/I2CDevice
+	url = https://github.com/doates625/I2CDevice.git
+[submodule "Firmware/lib/I2CReading"]
+	path = Firmware/lib/I2CReading
+	url = https://github.com/doates625/I2CReading.git
+[submodule "Firmware/lib/Struct"]
+	path = Firmware/lib/Struct
+	url = https://github.com/doates625/Struct.git
+[submodule "Firmware/lib/DigitalOut"]
+	path = Firmware/lib/DigitalOut
+	url = https://github.com/doates625/DigitalOut.git
