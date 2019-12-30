@@ -66,7 +66,7 @@ void Bluetooth::init()
 
 /**
  * @brief Processes all serial messages
- * @return True if commands were received
+ * @return True if update command was received
  */
 bool Bluetooth::update()
 {

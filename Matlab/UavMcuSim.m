@@ -10,7 +10,6 @@ classdef UavMcuSim < UavSim
     
     properties (Access = protected)
         remote;     % Remote controller [UavRemote]
-        serial;     % Serial port [serial]
         server;     % Serial interface [SerialServer]
         acc_loc;    % Local acceleration [m/s^2]
         forces;     % Propeller forces [N]
@@ -40,7 +39,7 @@ classdef UavMcuSim < UavSim
             obj.server.add_tx(obj.msg_id_update, 40, @obj.msg_tx_update);
             obj.server.add_rx(obj.msg_id_update, 16, @obj.msg_rx_update);
             
-            % Initialize data vectors
+            % Initialize vectors
             obj.acc_loc = zeros(3, 1);
             obj.forces = zeros(4, 1);
         end
@@ -65,6 +64,7 @@ classdef UavMcuSim < UavSim
             obj.server.tx(obj.msg_id_update);
             
             % Get force data
+            obj.got_rx = false;
             while ~obj.got_rx
                 obj.server.rx();
             end

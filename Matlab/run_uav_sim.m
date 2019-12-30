@@ -44,7 +44,6 @@ tz_cmd_log = wrap(tz_cmd_log, -pi, +pi);
 % Run simulation
 fprintf('Running simulation...\n');
 prog = ProgressTracker(1);
-failed = false;
 for i = 1:N
     
     % Run simulator
@@ -64,8 +63,7 @@ for i = 1:N
     
     % Check for failure
     if stat
-        disp('UAV failure.\n')
-        failed = true;
+        fprintf('UAV failure.\n')
         break
     end
 end

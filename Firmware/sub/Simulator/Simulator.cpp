@@ -21,7 +21,7 @@ namespace Simulator
 	void msg_rx_update(uint8_t* data);
 	void msg_tx_update(uint8_t* data);
 	SerialServer server(serial, start_byte);
-	bool got_data = false;
+	bool got_rx = false;
 
 	// State copies
 	Quat quat; 			// Orientation [Quat]
@@ -57,11 +57,11 @@ void Simulator::init()
  */
 void Simulator::update()
 {
-	got_data = false;
-	while (!got_data)
+	while (!got_rx)
 	{
 		server.rx();
 	}
+	got_rx = false;
 }
 
 /**
@@ -123,8 +123,8 @@ void Simulator::msg_rx_update(uint8_t* data)
 	for (uint8_t i = 0; i < 3; i++) str >> omega(i);
 	for (uint8_t i = 0; i < 3; i++) str >> accel(i);
 
-	// Set got data flag
-	got_data = true;
+	// Set rx flag
+	got_rx = true;
 }
 
 /**

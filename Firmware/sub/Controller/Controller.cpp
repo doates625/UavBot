@@ -26,7 +26,7 @@ void Controller::init()
 {
 	if (!init_complete)
 	{
-		// TODO
+		// TODO initialize matrices
 
 		// Set init flag
 		init_complete = true;
@@ -38,6 +38,11 @@ void Controller::init()
  */
 void Controller::update()
 {
-	// TODO
-	return;
+	// TODO (this is fake - DUH)
+	Vector<4> forces;
+	forces(0) = +1.1f;
+	forces(2) = +1.0f;
+	forces(1) = +1.0f;
+	forces(3) = +1.1f;
+	Motors::set_forces(forces);
 }
