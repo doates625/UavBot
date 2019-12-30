@@ -145,7 +145,7 @@ classdef UavMatlabSim < UavSim
             end
             f = p_min * f_alp + f_acc;
             
-            % Apply clamp limit
+            % Apply clamp limit (TODO remove and see if OK?)
             for i = 1:4
                 f(i) = clamp(f(i), obj.model.f_min, obj.model.f_max);
             end
