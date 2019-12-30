@@ -1,5 +1,5 @@
-function run_uav_matlab_sim(f_sim, q_pole, th_min, th_max, t_dur)
-%RUN_UAV_MATLAB_SIM(f_sim, q_pole, th_min, th_max, t_dur)
+function uav_matlab_sim(f_sim, q_pole, th_min, th_max, t_dur)
+%UAV_MATLAB_SIM(f_sim, q_pole, th_min, th_max, t_dur)
 %   Run UAV Matlab simulation
 %   
 %   Inputs:
@@ -25,6 +25,6 @@ fprintf('UAV Matlab Simulator\n\n')
 % Simulate model
 model = UavModel();
 uav = UavMatlabSim(model, f_sim, q_pole, th_min, th_max);
-run_uav_sim(uav, t_dur, true);
+uav_sim(uav, t_dur, true);
 
 end

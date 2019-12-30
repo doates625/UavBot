@@ -1,5 +1,5 @@
-function run_uav_sim(uav, t_dur, animate)
-%RUN_UAV_SIM(uav, t_dur, animate)
+function uav_sim(uav, t_dur, animate)
+%UAV_SIM(uav, t_dur, animate)
 %   Run UAV simulation
 %   
 %   Inputs:

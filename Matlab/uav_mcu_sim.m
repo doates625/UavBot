@@ -1,5 +1,5 @@
-function run_uav_mcu_sim(f_sim, t_dur, name, port)
-%RUN_UAV_MCU_SIM(f_sim, t_dur, name, port)
+function uav_mcu_sim(f_sim, t_dur, name, port)
+%UAV_MCU_SIM(f_sim, t_dur, name, port)
 %   Run UAV embedded simulation
 %   
 %   Inputs:
@@ -30,6 +30,6 @@ model = UavModel();
 uav = UavMcuSim(model, f_sim, remote, port);
 
 % Run simulator
-run_uav_sim(uav, t_dur, true);
+uav_sim(uav, t_dur, true);
 
 end
