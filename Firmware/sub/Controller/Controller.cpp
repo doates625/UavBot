@@ -150,10 +150,8 @@ void Controller::update()
 	Vector<3> alp_cmd = -(alp_gain_q * q_err_vec + alp_gain_w * omega);
 
 	// Force regulator controller
-	Matrix<1, 1> acc_mag_mat;	// LinearCpp: Add cast float to Matrix<1, 1> and Vector<1, 1>
-	acc_mag_mat(0, 0) = acc_mag_cmd;
 	Vector<4> f_alp = M_alp * alp_cmd;
-	Vector<4> f_acc = M_acc * acc_mag_mat;
+	Vector<4> f_acc = M_acc * Vector<1>(acc_mag_cmd);
 	float p_min = 1.0f;
 	for (uint8_t i = 0; i < 4; i++)
 	{
