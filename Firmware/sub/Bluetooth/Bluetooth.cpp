@@ -4,6 +4,7 @@
  */
 #include "Bluetooth.h"
 #include <Imu.h>
+#include <Motors.h>
 #include <Platform.h>
 #include <SerialServer.h>
 #include <Struct.h>
@@ -19,13 +20,13 @@ namespace Bluetooth
 	const uint32_t baud_rate = 57600;
 
 	// Serial server
+	const uint8_t start_byte = 0xFF;
 	const uint8_t msg_id_start = 0x00;
-	const uint8_t msg_id_teleop = 0x01;
-	const uint8_t msg_id_state = 0x02;
+	const uint8_t msg_id_update = 0x01;
 	void msg_rx_start(uint8_t* data);
-	void msg_rx_teleop(uint8_t* data);
-	void msg_tx_state(uint8_t* data);
-	SerialServer server(serial);
+	void msg_rx_update(uint8_t* data);
+	void msg_tx_update(uint8_t* data);
+	SerialServer server(serial, start_byte);
 
 	// Controller commands
 	bool start_cmd = false;
@@ -48,8 +49,8 @@ void Bluetooth::init()
 
 		// Configure server
 		server.add_rx(msg_id_start, 0, msg_rx_start);
-		server.add_rx(msg_id_teleop, 16, msg_rx_teleop);
-		server.add_tx(msg_id_state, 44, msg_tx_state);
+		server.add_rx(msg_id_update, 16, msg_rx_update);
+		server.add_tx(msg_id_update, 56, msg_tx_update);
 
 		// Wait for start command
 		while (!start_cmd)
@@ -96,7 +97,7 @@ void Bluetooth::msg_rx_start(uint8_t* data)
 }
 
 /**
- * @brief Unpacks teleop commands from remote and sends state back
+ * @brief Gets teleop commands from remote and sends state back
  * @param data Data pointer
  * 
  * Data format:
@@ -105,14 +106,12 @@ void Bluetooth::msg_rx_start(uint8_t* data)
  * [08-11] Global accel z [float, m/s^2]
  * [12-15] Heading cmd [float, rad]
  */
-void Bluetooth::msg_rx_teleop(uint8_t* data)
+void Bluetooth::msg_rx_update(uint8_t* data)
 {
 	Struct str(data);
-	str >> acc_cmd(0);
-	str >> acc_cmd(1);
-	str >> acc_cmd(2);
+	for (uint8_t i = 0; i < 3; i++) str >> acc_cmd(i);
 	str >> heading_cmd;
-	server.tx(msg_id_state);
+	server.tx(msg_id_update);
 }
 
 /**
@@ -130,22 +129,25 @@ void Bluetooth::msg_rx_teleop(uint8_t* data)
  * [28-31] Accel-x [float, m/s^2]
  * [32-35] Accel-y [float, m/s^2]
  * [36-39] Accel-z [float, m/s^2]
- * [40-43] Heading [float, rad]
+ * [40-43] Force++ [float, N]
+ * [44-47] Force+- [float, N]
+ * [48-51] Force-+ [float, N]
+ * [52-55] Force-- [float, N]
  */ 
-void Bluetooth::msg_tx_state(uint8_t* data)
+void Bluetooth::msg_tx_update(uint8_t* data)
 {
 	// Copy state data with ISRs disabled
 	Platform::disable_interrupts();
-	Quat quat = Imu::get_quat();
+	Vector<4> quat = Imu::get_quat();
 	Vector<3> omega = Imu::get_omega();
 	Vector<3> accel = Imu::get_accel();
-	float heading = Imu::get_heading();
+	Vector<4> forces = Motors::get_forces();
 	Platform::enable_interrupts();
 
 	// Pack state data
 	Struct str(data);
-	str << quat.w << quat.x << quat.y << quat.z;
-	str << omega(0) << omega(1) << omega(2);
-	str << accel(1) << accel(2) << accel(3);
-	str << heading;
+	for (uint8_t i = 0; i < 4; i++) str << quat(i);
+	for (uint8_t i = 0; i < 3; i++) str << omega(i);
+	for (uint8_t i = 0; i < 3; i++) str << accel(i);
+	for (uint8_t i = 0; i < 4; i++) str << forces(i);
 }

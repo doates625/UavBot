@@ -31,7 +31,6 @@ namespace Imu
 	Quat quat; 			// Orientation [Quat]
 	Vector<3> omega;	// Angular velocity [rad/s]
 	Vector<3> accel;	// Acceleration [m/s^2]
-	float heading;		// Heading [rad]
 	
 	// Init flag
 	bool init_complete = false;
@@ -59,9 +58,6 @@ bool Imu::init()
 				return false;
 			}
 			while (!bno055.calibrated());
-
-			// Init readings
-			heading = 0.0f;
 		#else
 			// Init simulator
 			Simulator::init();
@@ -79,36 +75,30 @@ bool Imu::init()
 void Imu::update()
 {
 #if !defined(SIMULATE_PLANT)
-	// Update readings
+	// Update quat
 	bno055.update_qua();
-	bno055.update_gyr();
-	bno055.update_lia();
-
-	// Copy quat
 	quat.w = bno055.get_qua_w();
 	quat.x = bno055.get_qua_x();
 	quat.y = bno055.get_qua_y();
 	quat.z = bno055.get_qua_z();
 	
-	// Copy omega
+	// Update omega
+	bno055.update_gyr();
 	omega(0) = bno055.get_gyr_x();
 	omega(1) = bno055.get_gyr_y();
 	omega(2) = bno055.get_gyr_z();
 	
-	// Copy accel
+	// Update accel
+	bno055.update_lia();
 	accel(0) = bno055.get_lia_x();
 	accel(1) = bno055.get_lia_y();
 	accel(2) = bno055.get_lia_z();
-
-	// Copy heading
-	heading = bno055.get_eul_h();
 #else
 	// Get readings from simulator
 	Simulator::update();
 	quat = Simulator::get_quat();
 	omega = Simulator::get_omega();
 	accel = Simulator::get_accel();
-	heading = Simulator::get_heading();
 #endif
 }
 
@@ -134,12 +124,4 @@ const Vector<3>& Imu::get_omega()
 const Vector<3>& Imu::get_accel()
 {
 	return accel;
-}
-
-/**
- * @brief Returns heading [rad]
- */
-float Imu::get_heading()
-{
-	return heading;
 }

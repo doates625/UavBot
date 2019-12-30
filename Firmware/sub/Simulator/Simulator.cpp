@@ -18,17 +18,17 @@ namespace Simulator
 	const uint32_t baud_rate = 115200;
 
 	// Serial server
+	const uint8_t start_byte = 0xFF;
 	const uint8_t msg_id_data = 0x00;
 	void msg_tx_data(uint8_t* data);
 	void msg_rx_data(uint8_t* data);
-	SerialServer server(serial);
+	SerialServer server(serial, start_byte);
 	bool got_data = false;
 
 	// Simulated IMU readings
 	Quat quat; 			// Orientation [Quat]
 	Vector<3> omega;	// Angular velocity [rad/s]
-	Vector<3> accel;	// Acceleration [m/s^2]
-	float heading;		// Heading [rad]
+	Vector<3> accel;	// Local accel [m/s^2]
 
 	// Init flag
 	bool init_complete = false;
@@ -46,7 +46,7 @@ void Simulator::init()
 
 		// Configure server
 		server.add_tx(msg_id_data, 16, msg_tx_data);
-		server.add_rx(msg_id_data, 44, msg_rx_data);
+		server.add_rx(msg_id_data, 40, msg_rx_data);
 
 		// Set init flag
 		init_complete = true;
@@ -91,15 +91,7 @@ const Vector<3>& Simulator::get_accel()
 }
 
 /**
- * @brief Returns heading [rad]
- */
-float Simulator::get_heading()
-{
-	return heading;
-}
-
-/**
- * @brief Packs force command data for simulator
+ * @brief Packs force data for simulator
  * @param data Data pointer
  * 
  * Data format:
@@ -119,7 +111,7 @@ void Simulator::msg_tx_data(uint8_t* data)
 }
 
 /**
- * @brief Unpacks simulated IMU data from simulator
+ * @brief Unpacks IMU data from simulator
  * @param data Data pointer
  * 
  * Data format:
@@ -130,10 +122,9 @@ void Simulator::msg_tx_data(uint8_t* data)
  * [16-19] Omega-x [float, rad/s]
  * [20-23] Omega-y [float, rad/s]
  * [24-27] Omega-z [float, rad/s]
- * [28-31] Accel-x [float, m/s^2]
- * [32-35] Accel-y [float, m/s^2]
- * [36-39] Accel-z [float, m/s^2]
- * [40-43] Heading [float, rad]
+ * [28-31] Local accel-x [float, m/s^2]
+ * [32-35] Local accel-y [float, m/s^2]
+ * [36-39] Local accel-z [float, m/s^2]
  */
 void Simulator::msg_rx_data(uint8_t* data)
 {
@@ -142,9 +133,8 @@ void Simulator::msg_rx_data(uint8_t* data)
 
 	// Unpack simulated IMU readings
 	str >> quat.w >> quat.x >> quat.y >> quat.z;
-	str >> omega(0) >> omega(1) >> omega(2);
-	str >> accel(0) >> accel(1) >> accel(2);
-	str >> heading;
+	for (uint8_t i = 0; i < 3; i++) str >> omega(i);
+	for (uint8_t i = 0; i < 3; i++) str >> accel(i);
 
 	// Set got data flag
 	got_data = true;

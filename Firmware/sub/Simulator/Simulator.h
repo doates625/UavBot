@@ -17,5 +17,4 @@ namespace Simulator
 	const Quat& get_quat();
 	const Vector<3>& get_omega();
 	const Vector<3>& get_accel();
-	float get_heading();
 }
