@@ -31,6 +31,11 @@ classdef (Abstract) UavSim < UavInterface
             %       w = Local angular vel [rad/s]
             %       acc = Global accel [m/s^2]
             
+            % DEBUG
+            if ~isequal(size(f), [4, 1])
+                disp('OOPS')
+            end
+            
             % Generalized accel vector
             a_gen = obj.model.M_mat \ f;
             

@@ -30,6 +30,7 @@ namespace Bluetooth
 
 	// Controller commands
 	bool start_cmd = false;
+	bool update_cmd = false;
 	Vector<3> acc_cmd;
 	float heading_cmd = 0.0f;
 
@@ -65,10 +66,14 @@ void Bluetooth::init()
 
 /**
  * @brief Processes all serial messages
+ * @return True if commands were received
  */
-void Bluetooth::update()
+bool Bluetooth::update()
 {
 	server.rx();
+	bool ret = update_cmd;
+	update_cmd = false;
+	return ret;
 }
 
 /**
@@ -112,6 +117,7 @@ void Bluetooth::msg_rx_update(uint8_t* data)
 	for (uint8_t i = 0; i < 3; i++) str >> acc_cmd(i);
 	str >> heading_cmd;
 	server.tx(msg_id_update);
+	update_cmd = true;
 }
 
 /**

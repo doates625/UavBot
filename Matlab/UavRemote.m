@@ -53,7 +53,7 @@ classdef UavRemote < UavInterface
             % Transmit commands
             obj.acc_cmd = acc_cmd;
             obj.tz_cmd = tz_cmd;
-            obj.server.tx(obj.msg_id_start);
+            obj.server.tx(obj.msg_id_update);
             
             % Wait for response
             obj.got_rx = false;
@@ -116,7 +116,7 @@ classdef UavRemote < UavInterface
             %   [44-47] Force+- [float, N]
             %   [48-51] Force-+ [float, N]
             %   [52-55] Force-- [float, N]
-            str = Stuct(server.get_rx_data());
+            str = Struct(server.get_rx_data());
             arr = zeros(14, 1);
             for i = 1:length(arr)
                 arr(i) = str.get('single');

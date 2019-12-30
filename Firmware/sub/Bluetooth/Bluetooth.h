@@ -12,7 +12,7 @@
 namespace Bluetooth
 {
 	void init();
-	void update();
+	bool update();
 	const Vector<3>& get_acc_cmd();
 	float get_heading_cmd();
 }

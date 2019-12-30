@@ -40,8 +40,9 @@ classdef UavMcuSim < UavSim
             obj.server.add_tx(obj.msg_id_update, 40, @obj.msg_tx_update);
             obj.server.add_rx(obj.msg_id_update, 16, @obj.msg_rx_update);
             
-            % Initialize local accel
+            % Initialize data vectors
             obj.acc_loc = zeros(3, 1);
+            obj.forces = zeros(4, 1);
         end
         
         function [q, w, acc, tz, f, stat] = update(obj, acc_cmd, tz_cmd)

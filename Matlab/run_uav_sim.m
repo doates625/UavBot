@@ -39,9 +39,12 @@ acc_cmd_log(3, t_log >= 3) = 5;
 acc_cmd_log(3, t_log >= 5) = -20;
 acc_cmd_log(3, t_log >= 7) = 0;
 tz_cmd_log(t_log >= 0) = t_log;
+tz_cmd_log = wrap(tz_cmd_log, -pi, +pi);
 
 % Run simulation
-tz_cmd_log = wrap(tz_cmd_log, -pi, +pi);
+fprintf('Running simulation...\n');
+prog = ProgressTracker(1);
+failed = false;
 for i = 1:N
     
     % Run simulator
@@ -56,9 +59,13 @@ for i = 1:N
     tz_log(i) = tz;
     f_log(:,i) = f;
     
+    % Update progress
+    prog.update(i / N);
+    
     % Check for failure
     if stat
-        disp('FAILURE')
+        disp('UAV failure.\n')
+        failed = true;
         break
     end
 end
@@ -74,31 +81,8 @@ f_log = f_log(:,1:N);
 acc_cmd_log = acc_cmd_log(:,1:N);
 tz_cmd_log = tz_cmd_log(:,1:N);
 
-% Animation playback
-if animate
-    figure(1)
-    clf, hold on, grid on
-    title('UAV Pose')
-    xlabel('x')
-    ylabel('y')
-    zlabel('z')
-    axis([-1, 1, -1, 1, -1, 1])
-    view(-20, +35)
-    camproj perspective
-    axis square
-    plot_q = FramePlot3D(1, 'r-', 'g-', 'b-');
-    plot_w = VectorPlot3D('k-');
-    plot_q.update(Quat());
-    plot_w.update(zeros(3, 1));
-    legend('x-hat', 'y-hat', 'z-hat', 'omega')
-    for i = 1:N
-        title(sprintf('UAV Pose (t = %.2f)', t_log(i)));
-        q = Quat(q_log(:,i));
-        w = q.rotate(w_log(:,i));
-        plot_q.update(q);
-        plot_w.update(w);
-    end
-end
+% Time plots
+fprintf('Generating time plots...\n')
 
 % Plot acceleration
 figure(2), clf
@@ -144,5 +128,36 @@ for i = 1:4
     plot(t_log, f_log(i,:), 'r-')
     ylim([f_min, f_max])
 end
+
+% Animation playback
+if animate
+    fprintf('Running animation...\n')
+    figure(1)
+    clf, hold on, grid on
+    title('UAV Pose')
+    xlabel('x')
+    ylabel('y')
+    zlabel('z')
+    axis([-1, 1, -1, 1, -1, 1])
+    view(-20, +35)
+    camproj perspective
+    axis square
+    plot_q = FramePlot3D(1, 'r-', 'g-', 'b-');
+    plot_w = VectorPlot3D('k-');
+    plot_q.update(Quat());
+    plot_w.update(zeros(3, 1));
+    legend('x-hat', 'y-hat', 'z-hat', 'omega')
+    for i = 1:N
+        title(sprintf('UAV Pose (t = %.2f)', t_log(i)));
+        q = Quat(q_log(:,i));
+        w = q.rotate(w_log(:,i));
+        plot_q.update(q);
+        plot_w.update(w);
+    end
+    fprintf('Animation complete!\n')
+end
+
+% Final print gap
+fprintf('\n')
 
 end
