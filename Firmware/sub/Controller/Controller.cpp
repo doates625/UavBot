@@ -125,7 +125,7 @@ void Controller::update()
 	float norm_acc = norm(acc_cmd);
 	if (norm_acc > 0)
 	{
-		Vector<3> acc_hat = (1.0f / norm_acc) * acc_cmd; // LinearCpp: Add matrix-float division
+		Vector<3> acc_hat = acc_cmd / norm_acc;
 		float cos_z = cos(tz_cmd);
 		float sin_z = sin(tz_cmd);
 		float t_x = asinf(sin_z*acc_hat(0) - cos_z*acc_hat(1));
