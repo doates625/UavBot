@@ -142,13 +142,7 @@ void Controller::update()
 
 	// Quaternion control
 	Quat q_err = inv(q_cmd) * q_act;
-	if (q_err.w < 0.0f)
-	{
-		q_err.w = -q_err.w;	// LinearCpp: Make op= for MatrixExp<4, 1>
-		q_err.x = -q_err.x;
-		q_err.y = -q_err.y;
-		q_err.z = -q_err.z;
-	}
+	if (q_err.w < 0.0f) q_err = -q_err;
 	Vector<3> q_err_vec;
 	q_err_vec(0) = q_err.x;	// LinearCpp: Sub-indexing will clean this up
 	q_err_vec(1) = q_err.y;
