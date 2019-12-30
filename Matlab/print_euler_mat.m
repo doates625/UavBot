@@ -1,12 +1,12 @@
-function euler_matrix()
-%EULER_MATRIX() Prints symbolic expression for Z-Y-X euler rotation matrix
+function print_euler_mat()
+%PRINT_EULER_MAT() Prints symbolic Z-Y-X euler rotation matrix
 
-% Symbolic Euler Rotations
-clear, clc
-disp('Symbolic Euler Rotation')
+% Title Printout
+clc
+fprintf('Symbolic Euler Rotation Matrix\n\n')
 
 % Z-Axis Rotation
-disp('Z-Axis (Rz)')
+fprintf('Z-axis (Rz)\n')
 syms cz sz
 Rz = [...
     cz, -sz, 0; ...
@@ -15,7 +15,7 @@ Rz = [...
 disp(Rz)
 
 % Y-Axis Rotation
-disp('Y-Axis (Ry)')
+fprintf('Y-axis (Ry)\n')
 syms cy sy
 Ry = [...
      cy, 0, sy; ...
@@ -24,7 +24,7 @@ Ry = [...
 disp(Ry)
 
 % X-Axis Rotation
-disp('X-Axis (Rx)')
+fprintf('X-axis (Rx)\n')
 syms cx sx
 Rx = [...
     1,  0,   0; ...
@@ -34,7 +34,7 @@ disp(Rx)
 
 % Full Rotation
 R = Rz * Ry * Rx;
-disp('Combined (Rz * Ry * Rx)')
+fprintf('Combined (Rz * Ry * Rx)\n')
 disp(R)
 
 end

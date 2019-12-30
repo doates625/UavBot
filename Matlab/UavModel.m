@@ -111,18 +111,5 @@ classdef UavModel < handle
             obj.M_alp = obj.M_mat(:,1:3);
             obj.M_acc = obj.M_mat(:,4:4);
         end
-        function print_mats(obj)
-            %PRINT_MATS(obj) Prints M_alp and M_acc in C++ format
-            for j = 1:3
-                for i = 1:4
-                    fprintf('M_alp(%u, %u) = %+.7e;\n', i-1, j-1, obj.M_alp(i, j));
-                end
-            end
-            for j = 1:1
-                for i = 1:4
-                    fprintf('M_acc(%u, %u) = %+.7e;\n', i-1, j-1, obj.M_acc(i, j));
-                end
-            end
-        end
     end
 end
