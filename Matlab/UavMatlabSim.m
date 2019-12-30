@@ -2,11 +2,6 @@ classdef UavMatlabSim < UavSim
     %UAVMATLABSIM Matlab simulator for UAV model
     %   Author: Dan Oates (WPI Class of 2020)
     
-    properties (SetAccess = protected)
-        q;  % Orientation [Quat]
-        w;  % Angular velocity [rad/s]
-    end
-    
     properties (Access = protected)
         k_q;    % Quaternion gain [rad/s^2]
         k_w;    % Velocity gain [s^-1]
@@ -24,11 +19,8 @@ classdef UavMatlabSim < UavSim
             %       f_sim = Sim frequency [Hz]
             %       q_pole = Quat ctrl pole [s^-1]
             %       th_min = Min thrust ratio [0-1]
-            %       th_max = Max thrust ratio [0-1]
-            
+            %       th_max = Max thrust ratio [0-1] 
             obj = obj@UavSim(model, f_sim);
-            obj.q = Quat();
-            obj.w = zeros(3, 1);
             obj.k_q = q_pole^2;
             obj.k_w = -2 * q_pole;
             acc_max = 4 * obj.model.f_max / obj.model.mass;
@@ -55,28 +47,10 @@ classdef UavMatlabSim < UavSim
             [q_cmd, acc_mag] = obj.lap(acc_cmd, tz_cmd);
             alp_cmd = obj.qoc(q_cmd);
             f = obj.frc(alp_cmd, acc_mag);
-            a = obj.model.M_mat \ f;
             
-            % Compute accel and heading
-            acc = [0; 0; a(4)];
-            acc = obj.q.rotate(acc) - obj.model.g_vec;
-            x_hat = obj.q.rotate([1; 0; 0]);
-            tz = atan2(x_hat(2), x_hat(1));
-            
-            % Update orientation
-            if norm(obj.w) > 0
-                q_theta = norm(obj.w) * obj.t_sim;
-                obj.q = unit(obj.q * Quat(obj.w, q_theta));
-            end
-            alp = a(1:3);
-            obj.w = obj.w + alp * obj.t_sim;
-            q = obj.q;
-            w = obj.w;
-            
-            % Check for flip
-            z_hat = [0; 0; 1];
-            z_hat = obj.q.rotate(z_hat);
-            stat = (z_hat(3) < 0);
+            % Simulate dynamics
+            [q, w, acc] = obj.update_sim(f);
+            [tz, stat] = obj.proc_quat();
         end
     end
     
@@ -135,7 +109,6 @@ classdef UavMatlabSim < UavSim
             %       q_cmd = Orientation cmd [Quat]
             %   Outputs:
             %       alp_cmd = Local angular accel cmd [rad/s^2]
-            
             q_err = q_cmd \ obj.q;
             if q_err.w < 0
                 q_err = -q_err;
