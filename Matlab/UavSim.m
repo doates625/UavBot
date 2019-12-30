@@ -32,14 +32,14 @@ classdef (Abstract) UavSim < UavInterface
             %       acc = Global accel [m/s^2]
             
             % Generalized accel vector
-            a = obj.model.M_mat \ f;
+            a_gen = obj.model.M_mat \ f;
             
             % Global acceleration
-            acc = [0; 0; a(4)];
+            acc = [0; 0; a_gen(4)];
             acc = obj.q.rotate(acc) - obj.model.g_vec;
             
             % Simulate quat dynamics
-            alp = a(1:3);
+            alp = a_gen(1:3);
             if norm(obj.w) > 0
                 q_theta = norm(obj.w) * obj.t_sim;
                 obj.q = unit(obj.q * Quat(obj.w, q_theta));

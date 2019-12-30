@@ -19,6 +19,19 @@ classdef (Abstract) UavInterface < handle
     
     methods (Access = public, Abstract)
         [q, w, acc, tz, f, stat] = update(obj, acc_cmd, tz_cmd);
+        %[q, w, acc, tz, f, stat] = UPDATE(obj, acc_cmd, tz_cmd)
+        %   Run simulation iteration and get states
+        %   
+        %   Inputs:
+        %       acc_cmd = Global accel cmd [m/s^2]
+        %       tz_cmd = Heading cmd [rad]
+        %   Outputs:
+        %       q = Orientation [Quat]
+        %       w = Local angular velocity [rad/s]
+        %       acc = Global accel [m/s^2]
+        %       tz = Heading [rad]
+        %       f = Propeller forces [N]
+        %       stat = Status [0 = OK, 1 = failed]
     end
     
     methods (Access = protected)

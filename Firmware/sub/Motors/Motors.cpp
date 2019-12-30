@@ -3,6 +3,9 @@
  * @author Dan Oates (WPI Class of 2020)
  */
 #include "Motors.h"
+#if defined(SIMULATE_PLANT)
+	#include <Simulator.h>
+#endif
 #include <ServoOut.h>
 #include <CppUtil.h>
 using CppUtil::clamp;
@@ -15,11 +18,10 @@ namespace Motors
 	// Constants
 	const float force_min = 0.00f;
 	const float force_max = 2.46f;
-	const uint8_t n_motors = 4;
 
 	// ESC Servos
-	const uint8_t motor_pins[n_motors] = { 22, 3, 23, 2 };
-	ServoOut motors[n_motors] = 
+	const uint8_t motor_pins[4] = { 22, 3, 23, 2 };
+	ServoOut motors[4] = 
 	{
 		ServoOut(motor_pins[0], force_min, force_max),	// M++
 		ServoOut(motor_pins[1], force_min, force_max),	// M+-
@@ -42,10 +44,12 @@ void Motors::init()
 	if (!init_complete)
 	{
 		// Set forces to zero
-		for (uint8_t i = 0; i < n_motors; i++)
-		{
-			motors[i].set_cmd(0.0f);
-		}
+		set_forces(0.0f);
+
+		#if defined(SIMULATE_PLANT)
+			// Init simulator
+			Simulator::init();
+		#endif
 
 		// Set init flag
 		init_complete = true;
@@ -64,13 +68,16 @@ void Motors::init()
  */
 void Motors::set_forces(Vector<4>& forces_)
 {
-	for (uint8_t i = 0; i < n_motors; i++)
+	for (uint8_t i = 0; i < 4; i++)
 	{
 		forces(i) = clamp(forces_(i), force_min, force_max);
 		#if defined(ENABLE_MOTORS)
 			motors[i].set_cmd(forces(i));
 		#endif
 	}
+	#if defined(SIMULATE_PLANT)
+		Simulator::set_forces(forces);
+	#endif
 }
 
 /**
@@ -80,7 +87,7 @@ void Motors::set_forces(Vector<4>& forces_)
 void Motors::set_forces(float force)
 {
 	force = clamp(force, force_min, force_max);
-	for (uint8_t i = 0; i < n_motors; i++)
+	for (uint8_t i = 0; i < 4; i++)
 	{
 		forces(i) = force;
 		#if defined(ENABLE_MOTORS)

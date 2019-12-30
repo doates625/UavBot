@@ -14,7 +14,6 @@ namespace Motors
 	// Constants
 	extern const float force_min;	// Min prop force [N]
 	extern const float force_max;	// Max prop force [N]
-	extern const uint8_t n_motors;	// Number of motors
 
 	// Functions
 	void init();

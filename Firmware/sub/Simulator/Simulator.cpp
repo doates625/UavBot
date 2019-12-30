@@ -3,10 +3,8 @@
  * @author Dan Oates (WPI Class of 2020)
  */
 #include "Simulator.h"
-#include <Motors.h>
 #include <SerialServer.h>
 #include <Struct.h>
-using Motors::n_motors;
 
 /**
  * Namespace Definitions
@@ -19,16 +17,17 @@ namespace Simulator
 
 	// Serial server
 	const uint8_t start_byte = 0xFF;
-	const uint8_t msg_id_data = 0x00;
-	void msg_tx_data(uint8_t* data);
-	void msg_rx_data(uint8_t* data);
+	const uint8_t msg_id_update = 0x00;
+	void msg_rx_update(uint8_t* data);
+	void msg_tx_update(uint8_t* data);
 	SerialServer server(serial, start_byte);
 	bool got_data = false;
 
-	// Simulated IMU readings
+	// State copies
 	Quat quat; 			// Orientation [Quat]
 	Vector<3> omega;	// Angular velocity [rad/s]
 	Vector<3> accel;	// Local accel [m/s^2]
+	Vector<4> forces;	// Propeller forces [N]
 
 	// Init flag
 	bool init_complete = false;
@@ -45,8 +44,8 @@ void Simulator::init()
 		serial->begin(baud_rate);
 
 		// Configure server
-		server.add_tx(msg_id_data, 16, msg_tx_data);
-		server.add_rx(msg_id_data, 40, msg_rx_data);
+		server.add_rx(msg_id_update, 40, msg_rx_update);
+		server.add_tx(msg_id_update, 16, msg_tx_update);
 
 		// Set init flag
 		init_complete = true;
@@ -58,7 +57,6 @@ void Simulator::init()
  */
 void Simulator::update()
 {
-	server.tx(msg_id_data);
 	got_data = false;
 	while (!got_data)
 	{
@@ -83,7 +81,7 @@ const Vector<3>& Simulator::get_omega()
 }
 
 /**
- * @brief Returns acceleration [m/s^2]
+ * @brief Returns local acceleration [m/s^2]
  */
 const Vector<3>& Simulator::get_accel()
 {
@@ -91,23 +89,12 @@ const Vector<3>& Simulator::get_accel()
 }
 
 /**
- * @brief Packs force data for simulator
- * @param data Data pointer
- * 
- * Data format:
- * [00-03] Force++ [float, N]
- * [04-07] Force+- [float, N]
- * [08-11] Force-+ [float, N]
- * [12-15] Force-- [float, N]
+ * @brief Sends motor forces to simulator
  */
-void Simulator::msg_tx_data(uint8_t* data)
+void Simulator::set_forces(const Vector<4>& forces_)
 {
-	Vector<4> forces = Motors::get_forces();
-	Struct str(data);
-	for (uint8_t i = 0; i < n_motors; i++)
-	{
-		str << forces(i);
-	}
+	forces = forces_;
+	server.tx(msg_id_update);
 }
 
 /**
@@ -126,7 +113,7 @@ void Simulator::msg_tx_data(uint8_t* data)
  * [32-35] Local accel-y [float, m/s^2]
  * [36-39] Local accel-z [float, m/s^2]
  */
-void Simulator::msg_rx_data(uint8_t* data)
+void Simulator::msg_rx_update(uint8_t* data)
 {
 	// Make struct object
 	Struct str(data);
@@ -138,4 +125,23 @@ void Simulator::msg_rx_data(uint8_t* data)
 
 	// Set got data flag
 	got_data = true;
+}
+
+/**
+ * @brief Packs force data for simulator
+ * @param data Data pointer
+ * 
+ * Data format:
+ * [00-03] Force++ [float, N]
+ * [04-07] Force+- [float, N]
+ * [08-11] Force-+ [float, N]
+ * [12-15] Force-- [float, N]
+ */
+void Simulator::msg_tx_update(uint8_t* data)
+{
+	Struct str(data);
+	for (uint8_t i = 0; i < 4; i++)
+	{
+		str << forces(i);
+	}
 }

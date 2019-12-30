@@ -39,7 +39,9 @@ void setup()
 	led = 0;
 
 	// Init control interrupt
-	timer.begin(run_ctrl, t_ctrl_us);
+	#if !defined(SIMULATE_PLANT)
+		timer.begin(run_ctrl, t_ctrl_us);
+	#endif
 }
 
 /**
@@ -47,7 +49,11 @@ void setup()
  */
 void loop()
 {
-	Bluetooth::update();
+	#if !defined(SIMULATE_PLANT)
+		Bluetooth::update();
+	#else
+		run_ctrl();
+	#endif
 }
 
 /**
@@ -57,6 +63,9 @@ void run_ctrl()
 {
 	led = 1;
 	Imu::update();
+	#if defined(SIMULATE_PLANT)
+		Bluetooth::update();
+	#endif
 	Controller::update();
 	led = 0;
 }

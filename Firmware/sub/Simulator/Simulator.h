@@ -17,4 +17,5 @@ namespace Simulator
 	const Quat& get_quat();
 	const Vector<3>& get_omega();
 	const Vector<3>& get_accel();
+	void set_forces(const Vector<4>& forces);
 }
