@@ -16,7 +16,6 @@ using Platform::wait;
 /**
  * Global Variables
  */
-
 IntervalTimer timer;
 
 /**
