@@ -1,0 +1,65 @@
+============================================================
+uav_mcu_sim.m (Bluetooth WORKS)
+============================================================
+
+UavRemote.m Line 29
+- Bluetooth object looks OK:
+
+Bluetooth Object : Bluetooth-btspp://201611021699:1
+
+   Communication Settings 
+      RemoteName:         UavBot
+      RemoteID:           btspp://201611021699
+      Channel:            1
+      Terminator:         'LF'
+
+   Communication State 
+      Status:             open
+      RecordStatus:       off
+
+   Read/Write State  
+      TransferStatus:     idle
+      BytesAvailable:     0
+      ValuesReceived:     0
+      ValuesSent:         0
+
+============================================================
+uav_remote_pilot.m (Bluetooth FAILS)
+============================================================
+
+UavRemote.m Line 29
+- Bluetooth object exact same as above:
+
+Bluetooth Object : Bluetooth-btspp://201611021699:1
+
+   Communication Settings 
+      RemoteName:         UavBot
+      RemoteID:           btspp://201611021699
+      Channel:            1
+      Terminator:         'LF'
+
+   Communication State 
+      Status:             open
+      RecordStatus:       off
+
+   Read/Write State  
+      TransferStatus:     idle
+      BytesAvailable:     0
+      ValuesReceived:     0
+      ValuesSent:         0
+
+UavRemote.m Line 35:
+- obj.server.tx(obj.msg_id_start);
+- This command WORKS (drone turns props on)
+
+UavRemote.m Line 55:
+- obj.server.tx(obj.msg_id_update);
+- This command FAILS (not sure why)
+- obj.server.serial_ says:
+
+Invalid instrument object.
+ This object has been deleted and cannot be
+ connected to the hardware. This object should
+ be removed from your workspace with CLEAR.
+
+- Who the fuck is deleting my Bluetooth???
