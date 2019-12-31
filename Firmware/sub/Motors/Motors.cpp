@@ -43,6 +43,12 @@ void Motors::init()
 {
 	if (!init_complete)
 	{
+		// Enable servos
+		for (uint8_t i = 0; i < 4; i++)
+		{
+			motors[i].set_enabled(true);
+		}
+
 		// Set forces to zero
 		set_forces(0.0f);
 
