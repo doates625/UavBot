@@ -115,7 +115,7 @@ void Controller::update()
 	float p = norm_xy_max / norm_xy;
 	if (p < 1.0f)
 	{
-		acc_cmd(0) *= p; // LinearCpp: Add sub-indexing and *= operator
+		acc_cmd(0) *= p;
 		acc_cmd(1) *= p;
 	}
 
@@ -144,7 +144,7 @@ void Controller::update()
 	Quat q_err = inv(q_cmd) * q_act;
 	if (q_err.w < 0.0f) q_err = -q_err;
 	Vector<3> q_err_vec;
-	q_err_vec(0) = q_err.x;	// LinearCpp: Sub-indexing will clean this up
+	q_err_vec(0) = q_err.x;
 	q_err_vec(1) = q_err.y;
 	q_err_vec(2) = q_err.z;
 	Vector<3> alp_cmd = -(alp_gain_q * q_err_vec + alp_gain_w * omega);
