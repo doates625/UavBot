@@ -128,27 +128,13 @@ end
 % Animation playback
 if animate
     fprintf('Running animation...\n')
-    figure(1)
-    clf, hold on, grid on
-    title('UAV Pose')
-    xlabel('x')
-    ylabel('y')
-    zlabel('z')
-    axis([-1, 1, -1, 1, -1, 1])
-    view(-20, +35)
-    camproj perspective
-    axis square
-    plot_q = FramePlot3D(1, 'r-', 'g-', 'b-');
-    plot_w = VectorPlot3D('k-');
-    plot_q.update(Quat());
-    plot_w.update(zeros(3, 1));
-    legend('x-hat', 'y-hat', 'z-hat', 'omega')
+    uav_plot = UavPlot();
     for i = 1:N
-        title(sprintf('UAV Pose (t = %.2f)', t_log(i)));
         q = Quat(q_log(:,i));
-        w = q.rotate(w_log(:,i));
-        plot_q.update(q);
-        plot_w.update(w);
+        w = w_log(:,i);
+        t = t_log(i);
+        uav_plot.update(q, w, t);
+        drawnow
     end
     fprintf('Animation complete!\n')
 end
