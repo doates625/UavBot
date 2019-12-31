@@ -13,7 +13,6 @@ classdef UavMatlabSim < UavSim
         function obj = UavMatlabSim(model, f_sim, q_pole, th_min, th_max)
             %obj = UAVMATLABSIM(model, f_sim, q_pole, th_min, th_max)
             %   Construct UAV Matlab simulator
-            %   
             %   Inputs:
             %       model = UAV model [UAVModel]
             %       f_sim = Sim frequency [Hz]
@@ -31,7 +30,6 @@ classdef UavMatlabSim < UavSim
         function [q, w, acc, tz, f, stat] = update(obj, acc_cmd, tz_cmd)
             %[q, w, acc, tz, f, stat] = UPDATE(obj, acc_cmd, tz_cmd)
             %   Run simulation iteration and get states
-            %   
             %   Inputs:
             %       acc_cmd = Global accel cmd [m/s^2]
             %       tz_cmd = Heading cmd [rad]
@@ -58,7 +56,6 @@ classdef UavMatlabSim < UavSim
         function [q_cmd, acc_mag] = lap(obj, acc_cmd, tz_cmd)
             %[q_cmd, acc_mag] = LAP(obj, acc_cmd, tz_cmd)
             %   Linear Acceleration Planner
-            %   
             %   Inputs:
             %       acc_cmd = Global accel cmd [m/s^2]
             %       tz_cmd = Heading cmd [rad]
@@ -104,7 +101,6 @@ classdef UavMatlabSim < UavSim
         function alp_cmd = qoc(obj, q_cmd)
             %alp_cmd = QOC(obj, q_cmd)
             %   Quaternion Orientation Controller
-            %   
             %   Inputs:
             %       q_cmd = Orientation cmd [Quat]
             %   Outputs:
@@ -120,7 +116,6 @@ classdef UavMatlabSim < UavSim
         function f = frc(obj, alp_cmd, acc_mag)
             %f = FRC(obj, alp_cmd, acc_mag)
             %   Force Regulator Controller
-            %   
             %   Inputs:
             %       alp_cmd = Local angular accel cmd [rad/s^2]
             %       acc_mag = Accel magnitude [m/s^2]

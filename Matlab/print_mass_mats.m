@@ -1,6 +1,7 @@
 function print_mass_mats(model)
 %PRINT_MASS_MATS(model) Prints values of mass matrices in C++ format
-%   model = UAV model [UavModel]
+%   Inputs:
+%       model = UAV model [UavModel]
 %   Author: Dan Oates (WPI Class of 2020)
 
 % Default arg

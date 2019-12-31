@@ -1,14 +1,12 @@
 function uav_matlab_sim(f_sim, q_pole, th_min, th_max, t_dur)
 %UAV_MATLAB_SIM(f_sim, q_pole, th_min, th_max, t_dur)
 %   Run UAV Matlab simulation
-%   
 %   Inputs:
 %       f_sim = Sim frequency [Hz]
 %       q_pole = Quat ctrl pole [s^-1]
 %       th_min = Min thrust ratio [0-1]
 %       th_max = Max thrust ratio [0-1]
 %       t_dur = Sim duration [s]
-%   
 %   Author: Dan Oates (WPI Class of 2020)
 clc
 

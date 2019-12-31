@@ -47,7 +47,6 @@ classdef UavMcuSim < UavSim
         function [q, w, acc, tz, f, stat] = update(obj, acc_cmd, tz_cmd)
             %[q, w, acc, tz, f, stat] = UPDATE(obj, acc_cmd, tz_cmd)
             %   Run simulation iteration and get states
-            %   
             %   Inputs:
             %       acc_cmd = Global accel cmd [m/s^2]
             %       tz_cmd = Heading cmd [rad]

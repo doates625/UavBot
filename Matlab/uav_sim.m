@@ -1,12 +1,10 @@
 function uav_sim(uav, t_dur, animate)
 %UAV_SIM(uav, t_dur, animate)
 %   Run UAV simulation
-%   
 %   Inputs:
 %       uav = UAV simulator [UavSim]
 %       t_dur = Sim duration [s]
 %       animate = Playback animation [logical]
-%   
 %   Author: Dan Oates (WPI Class of 2020)
 
 % Default args

@@ -1,5 +1,6 @@
 function print_euler_mat()
 %PRINT_EULER_MAT() Prints symbolic Z-Y-X euler rotation matrix
+%   Author: Dan Oates (WPI Class of 2020)
 
 % Title Printout
 clc

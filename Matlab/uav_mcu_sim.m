@@ -1,13 +1,11 @@
 function uav_mcu_sim(f_sim, t_dur, name, port)
 %UAV_MCU_SIM(f_sim, t_dur, name, port)
-%   Run UAV embedded simulation
-%   
+%   Run UAV embedded simulation 
 %   Inputs:
 %       f_sim = Sim frequency [Hz]
 %       t_dur = Sim duration [s]
 %       name = Bluetooth name [char]
 %       port = Serial port name [char]
-%   
 %   Author: Dan Oates (WPI Class of 2020)
 clc, instrreset
 
