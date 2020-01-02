@@ -7,10 +7,12 @@
 #include <Controller.h>
 #include <Motors.h>
 #include <Bluetooth.h>
+#include <State.h>
 #include <DebugLed.h>
 #include <Platform.h>
 #include <DigitalOut.h>
 using Controller::t_ctrl_us;
+using State::state_enabled;
 using Platform::wait;
 
 /**
@@ -63,11 +65,19 @@ void loop()
  */
 void run_ctrl()
 {
+	// Start loop
 	DebugLed::set(1);
+
 	#if defined(SIMULATE_PLANT)
+		// Get simulator commands
 		while (!Bluetooth::update());
 	#endif
+
+	// Control system
 	Imu::update();
 	Controller::update();
+	State::update();
+	
+	// End loop
 	DebugLed::set(0);
 }

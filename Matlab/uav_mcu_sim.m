@@ -21,6 +21,7 @@ fprintf('UAV MCU Simulator\n\n')
 % Create Bluetooth remote
 fprintf('Connecting to Bluetooth...\n')
 remote = UavRemote(name);
+remote.set_enabled(true);
 
 % Create serial simulator
 fprintf('Connecting to serial...\n')
@@ -29,5 +30,8 @@ uav = UavMcuSim(model, f_sim, remote, port);
 
 % Run simulator
 uav_sim(uav, t_dur, true);
+
+% Disable UAV
+remote.set_enabled(false);
 
 end

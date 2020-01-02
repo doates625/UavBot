@@ -4,6 +4,7 @@
  * @author Dan Oates (WPI Class of 2020)
  */
 #pragma once
+#include <LinearCpp.h>
 
 /**
  * Namespace Declaration
@@ -17,4 +18,5 @@ namespace Controller
 	// Functions
 	void init();
 	void update();
+	const Vector<4>& get_forces();
 }

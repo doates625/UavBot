@@ -9,6 +9,8 @@
 #else
 	#include <Simulator.h>
 #endif
+#include <CppUtil.h>
+using CppUtil::sqa;
 
 /**
  * Namespace Definitions
@@ -128,4 +130,12 @@ const Vector<3>& Imu::get_omega()
 const Vector<3>& Imu::get_accel()
 {
 	return accel;
+}
+
+/**
+ * @brief Returns true if UAV is flipped upside down
+ */
+bool Imu::is_flipped()
+{
+	return (sqa(quat.x) + sq(quat.y)) > 0.5f;
 }

@@ -22,6 +22,7 @@ uav_plot = UavPlot(fig);
 xbox = Xbox360(1, 0.075);
 acc_cmd = zeros(3, 1);
 tz_int = Integrator();
+real_uav = isa(uav, 'UavRemote');
 
 % Command loop
 frame_cnt = 1;
@@ -30,6 +31,15 @@ timer = Timer();
 while true
 
     % Parse cmds from xbox
+    if real_uav
+        if xbox.btn('Start')
+            % TODO Add edge detection to game controller class
+            uav.set_enabled(true);
+        end
+        if xbox.btn('Back')
+            uav.set_enabled(false);
+        end
+    end
     acc_cmd(1) = -acc_max * xbox.axis('Ly');
     acc_cmd(2) = -acc_max * xbox.axis('Lx');
     acc_cmd(3) = -acc_max * xbox.axis('Trig');
@@ -37,11 +47,17 @@ while true
     acc_cmd = Quat([0; 0; 1], tz_cmd).rotate(acc_cmd);
     
     % Send cmds and get state
-    [q, w, acc, tz, f, stat] = uav.update(acc_cmd, tz_cmd);
+    [q, w, acc, tz, f] = uav.update(acc_cmd, tz_cmd);
+    if real_uav && frame_cnt == 1
+        tz_int.set(tz);
+    end
     
     % Print status
     clc
     fprintf('UAV Pilot Program\n')
+    if real_uav
+        fprintf('State: %s\n', uav.get_state())
+    end
     fprintf('\nControls\n')
     fprintf('Accel-x: Cmd = %+.2f, Act = %+.2f\n', acc_cmd(1), acc(1));
     fprintf('Accel-y: Cmd = %+.2f, Act = %+.2f\n', acc_cmd(2), acc(2));
@@ -58,18 +74,20 @@ while true
     uav_plot.update(q, w);
     drawnow
     
-    % Exit conditions
+    % Exit button
     if xbox.btn('B')
         fprintf('\nStop by user.\n\n')
-        break
-    elseif stat
-        fprintf('\nUAV failure.\n\n')
         break
     end
     
     % Frame count
     frame_cnt = frame_cnt + 1;
     frame_rate = frame_cnt / timer.toc();
+end
+
+% Disable real UAVs
+if real_uav
+    uav.set_enabled(false);
 end
 
 end

@@ -40,6 +40,7 @@ namespace Controller
 	Vector<3> z_hat;
 	Matrix<4, 3> M_alp;
 	Matrix<4, 1> M_acc;
+	Vector<4> forces;
 
 	// Init flag
 	bool init_complete = false;
@@ -93,9 +94,7 @@ void Controller::init()
 }
 
 /**
- * @brief Runs one control loop iteration
- * 
- * Reference: Matlab\UavMatlabSim.m
+ * @brief Runs one control loop iteration to calculate prop forces
  */
 void Controller::update()
 {
@@ -161,8 +160,13 @@ void Controller::update()
 			1.0f;
 		if ((0.0f < p) && (p < p_min)) p_min = p;	
 	}
-	Vector<4> forces = p_min * f_alp + f_acc;
+	forces = p_min * f_alp + f_acc;
+}
 
-	// Set motor forces
-	Motors::set_forces(forces);
+/**
+ * @brief Returns prop forces [N]
+ */
+const Vector<4>& Controller::get_forces()
+{
+	return forces;
 }
