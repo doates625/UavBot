@@ -6,6 +6,7 @@
 #if defined(SIMULATE_PLANT)
 	#include <Simulator.h>
 #endif
+#include <Platform.h>
 #include <ServoOut.h>
 #include <CppUtil.h>
 using CppUtil::clamp;
@@ -43,14 +44,13 @@ void Motors::init()
 {
 	if (!init_complete)
 	{
-		// Enable servos
+		// Enable ESCs
 		for (uint8_t i = 0; i < 4; i++)
 		{
+			motors[i].set_cmd(force_min);
 			motors[i].set_enabled(true);
 		}
-
-		// Set forces to zero
-		set_forces(0.0f);
+		Platform::wait(3.0f);
 
 		#if defined(SIMULATE_PLANT)
 			// Init simulator
