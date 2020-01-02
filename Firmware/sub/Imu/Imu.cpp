@@ -74,7 +74,16 @@ bool Imu::init()
  */
 void Imu::update()
 {
-#if !defined(SIMULATE_PLANT)
+#if defined(SIMULATE_PLANT)
+
+	// Get readings from simulator
+	Simulator::update();
+	quat = Simulator::get_quat();
+	omega = Simulator::get_omega();
+	accel = Simulator::get_accel();
+
+#elif !defined(STUB_IMU)
+
 	// Update quat
 	bno055.update_qua();
 	quat.w = bno055.get_qua_w();
@@ -93,12 +102,7 @@ void Imu::update()
 	accel(0) = bno055.get_lia_x();
 	accel(1) = bno055.get_lia_y();
 	accel(2) = bno055.get_lia_z();
-#else
-	// Get readings from simulator
-	Simulator::update();
-	quat = Simulator::get_quat();
-	omega = Simulator::get_omega();
-	accel = Simulator::get_accel();
+	
 #endif
 }
 
