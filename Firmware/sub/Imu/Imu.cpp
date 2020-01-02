@@ -23,7 +23,7 @@ namespace Imu
 	TwoWire* const wire = &Wire;
 
 	// BNO055 IMU
-	const BNO055::axis_config_t axis_config = BNO055::tlf;
+	const BNO055::axis_config_t axis_config = BNO055::NWU;
 	BNO055 bno055(wire, axis_config);
 #endif
 
