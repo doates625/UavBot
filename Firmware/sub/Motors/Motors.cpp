@@ -77,7 +77,7 @@ void Motors::set_forces(Vector<4>& forces_)
 	for (uint8_t i = 0; i < 4; i++)
 	{
 		forces(i) = clamp(forces_(i), force_min, force_max);
-		#if defined(ENABLE_MOTORS)
+		#if !defined(DISABLE_MOTORS)
 			motors[i].set_cmd(forces(i));
 		#endif
 	}
