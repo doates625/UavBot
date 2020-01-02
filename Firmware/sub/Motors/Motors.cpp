@@ -87,22 +87,6 @@ void Motors::set_forces(Vector<4>& forces_)
 }
 
 /**
- * @brief Sets all motor forces to same force
- * @param force Motor force [N]
- */
-void Motors::set_forces(float force)
-{
-	force = clamp(force, force_min, force_max);
-	for (uint8_t i = 0; i < 4; i++)
-	{
-		forces(i) = force;
-		#if defined(ENABLE_MOTORS)
-			motors[i].set_cmd(force);
-		#endif
-	}
-}
-
-/**
  * @brief Returns motor forces vector
  */
 const Vector<4>& Motors::get_forces()

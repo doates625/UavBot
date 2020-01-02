@@ -18,6 +18,5 @@ namespace Motors
 	// Functions
 	void init();
 	void set_forces(Vector<4>& forces_);
-	void set_forces(float force);
 	const Vector<4>& get_forces();
 }
