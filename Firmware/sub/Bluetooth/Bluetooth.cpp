@@ -54,10 +54,12 @@ void Bluetooth::init()
 		server.add_tx(msg_id_update, 56, msg_tx_update);
 
 		// Wait for start command
-		while (!start_cmd)
-		{
-			update();
-		}
+		#if !defined(STUB_BLUETOOTH)
+			while (!start_cmd)
+			{
+				update();
+			}
+		#endif
 
 		// Set init flag
 		init_complete = true;
@@ -81,6 +83,11 @@ bool Bluetooth::update()
  */
 const Vector<3>& Bluetooth::get_acc_cmd()
 {
+	#if defined(STUB_BLUETOOTH)
+		acc_cmd(0) = 0.0f;
+		acc_cmd(1) = 0.0f;
+		acc_cmd(2) = -10.0f;
+	#endif
 	return acc_cmd;
 }
 
@@ -89,6 +96,9 @@ const Vector<3>& Bluetooth::get_acc_cmd()
  */
 float Bluetooth::get_heading_cmd()
 {
+	#if defined(STUB_BLUETOOTH)
+		heading_cmd = 0.0f;
+	#endif
 	return heading_cmd;
 }
 
