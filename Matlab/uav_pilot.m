@@ -5,7 +5,7 @@ function uav_pilot(uav, acc_max, wz_max)
 %       acc_max = Max x-y-z accel cmd [m/s^2]
 %       wz_max = Max yaw velocity cmd [rad/s]
 %   Author: Dan Oates (WPI Class of 2020)
-clc, instrreset
+clc
 
 % Default args
 if nargin < 3, wz_max = pi/4; end
