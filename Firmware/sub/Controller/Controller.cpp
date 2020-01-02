@@ -19,9 +19,9 @@ namespace Controller
 {
 	// Constants
 	const float f_ctrl = 50.0f;		// Control freq [Hz]
-	const float mass = 0.552f;		// UAV mass [kg]
+	const float mass = 0.593f;		// UAV mass [kg]
 	const float gravity = 9.807f;	// Gravity [m/s^2]
-	const float q_pole = -30.0f;	// Quat pole [s^-1]
+	const float q_pole = -10.0f;	// Quat pole [s^-1] (was -30)
 	const float th_min = 0.1f;		// Min thrust [N/N]
 	const float th_max = 0.9f;		// Max thrust [N/N]
 

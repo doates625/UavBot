@@ -72,7 +72,7 @@ classdef UavModel < handle
                 r_yp = 9.30e-02;
                 r_yn = 9.30e-02;
                 r_z = 5.50e-02;
-                mass = 0.552;
+                mass = 0.593;
                 f_min = 0.00;
                 f_max = 2.46;
             end

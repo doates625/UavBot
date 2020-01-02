@@ -10,7 +10,7 @@ clc, instrreset
 
 % Default arguments
 if nargin < 3, wz_max = pi/4; end
-if nargin < 2, acc_max = 1.0; end
+if nargin < 2, acc_max = 2.0; end
 if nargin < 1, name = 'UavBot'; end
 
 % Create remote and run pilot
