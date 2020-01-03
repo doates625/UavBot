@@ -3,10 +3,12 @@ classdef UavMatlabSim < UavSim
     %   Author: Dan Oates (WPI Class of 2020)
     
     properties (Access = protected)
-        k_q;    % Quaternion gain [rad/s^2]
-        k_w;    % Velocity gain [s^-1]
-        a_min;  % Min accel cmd [m/s^2]
-        a_max;  % Max accel cmd [m/s^2]
+        gain_p;     % Quat P-gain [s^-2]
+        gain_d;     % Quat D-gain [s^-1]
+        gain_i;     % Quat I-gain [s^-3]
+        q_err_int;  % Quat error integral
+        a_min;      % Min accel cmd [m/s^2]
+        a_max;      % Max accel cmd [m/s^2]
     end
     
     methods (Access = public)
@@ -20,8 +22,10 @@ classdef UavMatlabSim < UavSim
             %       th_min = Min thrust ratio [0-1]
             %       th_max = Max thrust ratio [0-1] 
             obj = obj@UavSim(model, f_sim);
-            obj.k_q = q_pole^2;
-            obj.k_w = -2 * q_pole;
+            obj.gain_p = 3*q_pole^2;
+            obj.gain_i = -q_pole^3;
+            obj.gain_d = -3*q_pole;
+            obj.q_err_int = zeros(3, 1);
             acc_max = 4 * obj.model.f_max / obj.model.mass;
             obj.a_min = th_min * acc_max;
             obj.a_max = th_max * acc_max;
@@ -104,13 +108,21 @@ classdef UavMatlabSim < UavSim
             %   Inputs:
             %       q_cmd = Orientation cmd [Quat]
             %   Outputs:
-            %       alp_cmd = Local angular accel cmd [rad/s^2]
+            %       alp_cmd = Local angular accel cmd [rad/s^2] 
+            
+            % Compute error vector
             q_err = q_cmd \ obj.q;
             if q_err.w < 0
                 q_err = -q_err;
             end
             q_err = [q_err.x; q_err.y; q_err.z];
-            alp_cmd = -(obj.k_q*q_err + obj.k_w*obj.w);
+            
+            % Compute alpha cmd
+            obj.q_err_int = obj.q_err_int + q_err * obj.t_sim;
+            alp_p = obj.gain_p * q_err;
+            alp_i = obj.gain_i * obj.q_err_int;
+            alp_d = obj.gain_d * obj.w;
+            alp_cmd = -(alp_p + alp_i + alp_d);
         end
         
         function f = frc(obj, alp_cmd, acc_mag)
