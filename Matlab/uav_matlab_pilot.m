@@ -14,7 +14,7 @@ if nargin < 5, wz_max = pi/4; end
 if nargin < 4, acc_max = 1.0; end
 if nargin < 3, th_max = 0.9; end
 if nargin < 2, th_min = 0.1; end
-if nargin < 1, q_pole = -30; end
+if nargin < 1, q_pole = -10; end
 frame_rate = 50;
 
 % Create and pilot model

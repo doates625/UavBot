@@ -14,7 +14,7 @@ clc
 if nargin < 5, t_dur = 10; end
 if nargin < 4, th_max = 0.9; end
 if nargin < 3, th_min = 0.1; end
-if nargin < 2, q_pole = -30; end
+if nargin < 2, q_pole = -10; end
 if nargin < 1, f_sim = 50; end
 
 % Initial Display
