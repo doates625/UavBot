@@ -6,9 +6,11 @@
 #include <Imu.h>
 #include <Bluetooth.h>
 #include <Motors.h>
+#include <State.h>
 #include <CppUtil.h>
 using Motors::force_min;
 using Motors::force_max;
+using State::state_enabled;
 using CppUtil::clamp;
 using CppUtil::sqa;
 
@@ -19,20 +21,22 @@ namespace Controller
 {
 	// Constants
 	const float f_ctrl = 50.0f;		// Control freq [Hz]
-	const float mass = 0.593f;		// UAV mass [kg]
+	const float mass = 0.546f;		// UAV mass [kg]
 	const float gravity = 9.807f;	// Gravity [m/s^2]
 	const float q_pole = -10.0f;	// Quat pole [s^-1] (was -30)
 	const float th_min = 0.1f;		// Min thrust [N/N]
 	const float th_max = 0.9f;		// Max thrust [N/N]
 
 	// Derived constants
-	const float t_ctrl_us = 1e6f / f_ctrl;
+	const float t_ctrl_s = 1.0f / f_ctrl;
+	const float t_ctrl_us = 1e6f * t_ctrl_s;
 	const float acc_max = (4.0f * force_max / mass);
 	const float acc_mag_min = acc_max * th_min;
 	const float acc_mag_max = acc_max * th_max;
 	const float acc_mag_max_sq = sqa(acc_mag_max);
-	const float alp_gain_q = sqa(q_pole);
-	const float alp_gain_w = -2.0f * q_pole;
+	const float gain_p = 3.0f * powf(q_pole, 2.0f);
+	const float gain_i = -3.0f * powf(q_pole, 3.0f);
+	const float gain_d = -3.0f * q_pole;
 
 	// Vectors and matrices
 	Vector<3> x_hat;
@@ -40,6 +44,7 @@ namespace Controller
 	Vector<3> z_hat;
 	Matrix<4, 3> M_alp;
 	Matrix<4, 1> M_acc;
+	Vector<3> q_err_int;
 	Vector<4> forces;
 
 	// Init flag
@@ -83,10 +88,10 @@ void Controller::init()
 		M_alp(3, 2) = +1.018182e-02f;
 
 		// Initialize linear mass matrix
-		M_acc(0, 0) = +1.380000e-01f;
-		M_acc(1, 0) = +1.380000e-01f;
-		M_acc(2, 0) = +1.380000e-01f;
-		M_acc(3, 0) = +1.380000e-01f;
+		M_acc(0, 0) = +1.365000e-01f;
+		M_acc(1, 0) = +1.365000e-01f;
+		M_acc(2, 0) = +1.365000e-01f;
+		M_acc(3, 0) = +1.365000e-01f;
 
 		// Set init flag
 		init_complete = true;
@@ -146,7 +151,12 @@ void Controller::update()
 	q_err_vec(0) = q_err.x;
 	q_err_vec(1) = q_err.y;
 	q_err_vec(2) = q_err.z;
-	Vector<3> alp_cmd = -(alp_gain_q * q_err_vec + alp_gain_w * omega);
+	Vector<3> alp_cmd = -(gain_p * q_err_vec + gain_d * omega);
+	if (State::get() == state_enabled)
+	{
+		q_err_int = q_err_int + t_ctrl_s * q_err_vec;
+		alp_cmd = alp_cmd - gain_i * q_err_int;
+	}
 
 	// Force regulator controller
 	Vector<4> f_alp = M_alp * alp_cmd;
