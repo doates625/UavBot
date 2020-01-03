@@ -137,5 +137,5 @@ const Vector<3>& Imu::get_accel()
  */
 bool Imu::is_flipped()
 {
-	return (sqa(quat.x) + sq(quat.y)) > 0.5f;
+	return (sqa(quat.x) + sqa(quat.y)) > 0.5f;
 }
