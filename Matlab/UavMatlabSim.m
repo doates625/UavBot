@@ -6,7 +6,6 @@ classdef UavMatlabSim < UavSim
         gain_p;     % Quat P-gain [s^-2]
         gain_d;     % Quat D-gain [s^-1]
         gain_i;     % Quat I-gain [s^-3]
-        q_err_int;  % Quat error integral
         a_min;      % Min accel cmd [m/s^2]
         a_max;      % Max accel cmd [m/s^2]
     end
@@ -22,10 +21,8 @@ classdef UavMatlabSim < UavSim
             %       th_min = Min thrust ratio [0-1]
             %       th_max = Max thrust ratio [0-1] 
             obj = obj@UavSim(model, f_sim);
-            obj.gain_p = 3*q_pole^2;
-            obj.gain_i = -q_pole^3;
-            obj.gain_d = -3*q_pole;
-            obj.q_err_int = zeros(3, 1);
+            obj.gain_p = q_pole^2;
+            obj.gain_d = -2*q_pole;
             acc_max = 4 * obj.model.f_max / obj.model.mass;
             obj.a_min = th_min * acc_max;
             obj.a_max = th_max * acc_max;
@@ -118,11 +115,9 @@ classdef UavMatlabSim < UavSim
             q_err = [q_err.x; q_err.y; q_err.z];
             
             % Compute alpha cmd
-            obj.q_err_int = obj.q_err_int + q_err * obj.t_sim;
             alp_p = obj.gain_p * q_err;
-            alp_i = obj.gain_i * obj.q_err_int;
             alp_d = obj.gain_d * obj.w;
-            alp_cmd = -(alp_p + alp_i + alp_d);
+            alp_cmd = -(alp_p + alp_d);
         end
         
         function f = frc(obj, alp_cmd, acc_mag)

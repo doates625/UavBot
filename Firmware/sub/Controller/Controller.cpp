@@ -6,11 +6,9 @@
 #include <Imu.h>
 #include <Bluetooth.h>
 #include <Motors.h>
-#include <State.h>
 #include <CppUtil.h>
 using Motors::force_min;
 using Motors::force_max;
-using State::state_enabled;
 using CppUtil::clamp;
 using CppUtil::sqa;
 
@@ -34,9 +32,8 @@ namespace Controller
 	const float acc_mag_min = acc_max * th_min;
 	const float acc_mag_max = acc_max * th_max;
 	const float acc_mag_max_sq = sqa(acc_mag_max);
-	const float gain_p = 3.0f * powf(q_pole, 2.0f);
-	const float gain_i = -3.0f * powf(q_pole, 3.0f);
-	const float gain_d = -3.0f * q_pole;
+	const float gain_p = sqa(q_pole);
+	const float gain_d = -2.0f * q_pole;
 
 	// Vectors and matrices
 	Vector<3> x_hat;
@@ -152,11 +149,6 @@ void Controller::update()
 	q_err_vec(1) = q_err.y;
 	q_err_vec(2) = q_err.z;
 	Vector<3> alp_cmd = -(gain_p * q_err_vec + gain_d * omega);
-	if (State::get() == state_enabled)
-	{
-		q_err_int = q_err_int + t_ctrl_s * q_err_vec;
-		alp_cmd = alp_cmd - gain_i * q_err_int;
-	}
 
 	// Force regulator controller
 	Vector<4> f_alp = M_alp * alp_cmd;
