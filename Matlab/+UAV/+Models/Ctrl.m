@@ -11,7 +11,7 @@ classdef Ctrl
         fr_max; % Max prop thrust ratio [N/N]
     end
     
-    methods
+    methods (Access = public)
         function obj = Ctrl(s_qx, s_qy, s_qz, s_az, fr_min, fr_max) 
             %CTRL Construct control model
             %   

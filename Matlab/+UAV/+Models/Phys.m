@@ -21,7 +21,7 @@ classdef Phys < handle
         D_bar;  % Inv moment arm matrix [m^-1]
     end
     
-    methods
+    methods (Access = public)
         function obj = Phys(...
                 I_xx, I_yy, I_zz, r_x, r_y, r_z, mass, f_min, f_max)
             %PHYS Construct physical model
