@@ -5,7 +5,7 @@ classdef Phys < handle
     properties (Constant)
         % Gravity [m/s^2]
         g_sca = 9.807;
-        g_vec = [0; 0; UAV.PhysModel.g_sca];
+        g_vec = [0; 0; UAV.Models.Phys.g_sca];
     end
     
     properties (SetAccess = protected)
@@ -76,10 +76,10 @@ classdef Phys < handle
             
             % Derived params
             D_mat = [...
-                +rx, -rx, +rx, -rx; ...
-                -ry, -ry, +ry, +ry; ...
-                +rz, -rz, -rz, +rz; ...
-                  1,   1,   1,   1];
+                +r_x, -r_x, +r_x, -r_x; ...
+                -r_y, -r_y, +r_y, +r_y; ...
+                +r_z, -r_z, -r_z, +r_z; ...
+                   1,    1,    1,    1];
             M_sig = diag([I_xx, I_yy, I_zz, mass]);
             M_mat = D_mat \ M_sig;
             obj.M_ang = M_mat(:, 1:3);
