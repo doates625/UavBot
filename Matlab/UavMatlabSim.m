@@ -3,11 +3,12 @@ classdef UavMatlabSim < UavSim
     %   Author: Dan Oates (WPI Class of 2020)
     
     properties (Access = protected)
-        gain_p;     % Quat P-gain [s^-2]
-        gain_d;     % Quat D-gain [s^-1]
-        gain_i;     % Quat I-gain [s^-3]
         a_min;      % Min accel cmd [m/s^2]
         a_max;      % Max accel cmd [m/s^2]
+        q_x_pid;    % Quat-x PID [PID]
+        q_y_pid;    % Quat-y PID [PID]
+        q_z_pid;    % Quat-z PID [PID]
+        q_sat;      % Quat PID saturation [logical]
     end
     
     methods (Access = public)
@@ -20,12 +21,20 @@ classdef UavMatlabSim < UavSim
             %       q_pole = Quat ctrl pole [s^-1]
             %       th_min = Min thrust ratio [0-1]
             %       th_max = Max thrust ratio [0-1] 
+            
+            % Superconstructor
             obj = obj@UavSim(model, f_sim);
-            obj.gain_p = q_pole^2;
-            obj.gain_d = -2*q_pole;
+            
+            % Acceleration limits
             acc_max = 4 * obj.model.f_max / obj.model.mass;
             obj.a_min = th_min * acc_max;
             obj.a_max = th_max * acc_max;
+            
+            % Quat-x PID
+            obj.q_x_pid = obj.make_quat_pid(obj.model.I_xx, q_pole);
+            obj.q_y_pid = obj.make_quat_pid(obj.model.I_yy, q_pole);
+            obj.q_z_pid = obj.make_quat_pid(obj.model.I_zz, q_pole);
+            obj.q_sat = false;
         end
         
         function [q, w, acc, tz, f, stat] = update(obj, acc_cmd, tz_cmd)
@@ -44,8 +53,8 @@ classdef UavMatlabSim < UavSim
             
             % Simulate controller
             [q_cmd, acc_mag] = obj.lap(acc_cmd, tz_cmd);
-            alp_cmd = obj.qoc(q_cmd);
-            f = obj.frc(alp_cmd, acc_mag);
+            f_alp = obj.qoc(q_cmd);
+            f = obj.frc(f_alp, acc_mag);
             
             % Simulate dynamics
             [q, w, acc] = obj.update_sim(f);
@@ -99,38 +108,40 @@ classdef UavMatlabSim < UavSim
             acc_mag = clamp(acc_mag, obj.a_min, obj.a_max);
         end
         
-        function alp_cmd = qoc(obj, q_cmd)
-            %alp_cmd = QOC(obj, q_cmd)
+        function f_alp = qoc(obj, q_cmd)
+            %f_alp = QOC(obj, q_cmd)
             %   Quaternion Orientation Controller
             %   Inputs:
             %       q_cmd = Orientation cmd [Quat]
             %   Outputs:
-            %       alp_cmd = Local angular accel cmd [rad/s^2] 
+            %       f_alp = Differential prop forces [N]
             
             % Compute error vector
             q_err = q_cmd \ obj.q;
             if q_err.w < 0
                 q_err = -q_err;
             end
-            q_err = [q_err.x; q_err.y; q_err.z];
             
-            % Compute alpha cmd
-            alp_p = obj.gain_p * q_err;
-            alp_d = obj.gain_d * obj.w;
-            alp_cmd = -(alp_p + alp_d);
+            % Compute net torque cmd
+            tau = zeros(3, 1);
+            tau(1) = obj.q_x_pid.update(-q_err.x, 0, obj.q_sat);
+            tau(2) = obj.q_y_pid.update(-q_err.y, 0, obj.q_sat);
+            tau(3) = obj.q_z_pid.update(-q_err.z, 0, obj.q_sat);
+            
+            % Compute force cmd
+            f_alp = obj.model.D_bar * tau;
         end
         
-        function f = frc(obj, alp_cmd, acc_mag)
-            %f = FRC(obj, alp_cmd, acc_mag)
+        function f = frc(obj, f_alp, acc_mag)
+            %f = FRC(obj, f_alp, acc_mag)
             %   Force Regulator Controller
             %   Inputs:
-            %       alp_cmd = Local angular accel cmd [rad/s^2]
+            %       f_alp = Differential prop forces [N]
             %       acc_mag = Accel magnitude [m/s^2]
             %   Outputs:
             %       f = Prop force vector [N] 
             
             % Apply angular limit
-            f_alp = obj.model.M_alp * alp_cmd;
             f_acc = obj.model.M_acc * acc_mag;
             p_min = 1;
             for i = 1:4
@@ -147,10 +158,30 @@ classdef UavMatlabSim < UavSim
             end
             f = p_min * f_alp + f_acc;
             
+            % Saturation flag
+            if p_min < 1
+                obj.q_sat = true;
+            end
+            
             % Apply clamp limit (TODO remove and see if OK?)
             for i = 1:4
                 f(i) = clamp(f(i), obj.model.f_min, obj.model.f_max);
             end
+        end
+        
+        function pid = make_quat_pid(obj, I, s)
+            %pid = MAKE_QUAT_PID(I, q_pole) Make quat PID controller
+            %   Inputs:
+            %       I = Axis inertia [kg*m^2]
+            %       s = Triple pole [s^-1]
+            %   Outputs:
+            %       pid = PID controller [PID]
+            kp = 3*I*s^2;
+            ki = -I*s^3;
+            kd = -3*I*s;
+            u_min = -realmax();
+            u_max = +realmax();
+            pid = PID(kp, ki, kd, u_min, u_max, obj.f_sim);
         end
     end
 end

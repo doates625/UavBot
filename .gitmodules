@@ -34,3 +34,6 @@
 [submodule "Firmware/lib/DigitalOut"]
 	path = Firmware/lib/DigitalOut
 	url = https://github.com/doates625/DigitalOut.git
+[submodule "Firmware/lib/PID"]
+	path = Firmware/lib/PID
+	url = https://github.com/doates625/PID.git

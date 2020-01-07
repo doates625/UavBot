@@ -45,10 +45,13 @@ classdef (Abstract) UavInterface < handle
             x_hat = obj.q.rotate([1; 0; 0]);
             tz = atan2(x_hat(2), x_hat(1));
             
-            % Compute status
+            % Compute status (TODO revise)
+            %{
             z_hat = [0; 0; 1];
             z_hat = obj.q.rotate(z_hat);
             stat = (z_hat(3) < 0);
+            %}
+            stat = false;
         end
     end
 end

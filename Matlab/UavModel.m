@@ -27,6 +27,7 @@ classdef UavModel < handle
         M_mat;  % Generalized mass matrix
         M_alp;  % Angular mass matrix
         M_acc;  % Linear mass matrix
+        D_bar;  % TODO DOC
     end
     
     methods (Access = public)
@@ -110,6 +111,11 @@ classdef UavModel < handle
             obj.M_mat = N_mat \ M_sig;
             obj.M_alp = obj.M_mat(:,1:3);
             obj.M_acc = obj.M_mat(:,4:4);
+            
+            % NEW (TODO DOC)
+            D_bar = inv(N_mat);
+            D_bar = D_bar(:,1:3);
+            obj.D_bar = D_bar;
         end
     end
 end

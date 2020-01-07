@@ -1,0 +1,13 @@
+clear
+clc
+
+syms rx ry rz
+
+D = [...
+    +rx, -rx, +rx, -rx; ...
+    -ry, -ry, +ry, +ry; ...
+    +rz, -rz, -rz, +rz; ...
+      1,   1,   1,   1];
+
+disp(D)
+disp(inv(D))
