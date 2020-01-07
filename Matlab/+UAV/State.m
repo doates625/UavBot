@@ -36,10 +36,10 @@ classdef State < handle
             obj.state = state;
         end
         
-        function ang_z = get_ang_z(obj)
-            %ang_z = GET_ANG_Z(obj) Get UAV heading [rad] [-pi, +pi]
+        function tz = get_tz(obj)
+            %tz = GET_TZ(obj) Get UAV heading [rad] [-pi, +pi]
             x_hat = obj.ang_pos.rotate([1; 0; 0]);
-            ang_z = atan2(x_hat(2), x_hat(1));
+            tz = atan2(x_hat(2), x_hat(1));
         end
     end
 end
