@@ -1,4 +1,4 @@
-classdef (Abstract) Interface
+classdef (Abstract) Interface < handle
     %INTERFACE Superclass for UAV interfaces (real and simulated)
     %   Author: Dan Oates (WPI Class of 2020)
     
@@ -14,12 +14,11 @@ classdef (Abstract) Interface
     end
     
     methods (Access = public, Abstract)
-        state = update(obj, acc_cmd, tz_cmd);
-        %state = UPDATE(obj, acc_cmd, tz_cmd)
+        state = update(obj, cmd);
+        %state = UPDATE(obj, cmd)
         %   Send commands and get new state
         %   Inputs:
-        %       acc_cmd = Global acceleration cmd [m/s^2]
-        %       tz_cmd = Heading cmd [rad]
+        %       cmd = UAV command [UAV.Cmd]
         %   Outputs:
         %       state = UAV state [UAV.State]
     end
