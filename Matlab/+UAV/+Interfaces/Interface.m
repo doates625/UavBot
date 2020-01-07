@@ -14,12 +14,12 @@ classdef (Abstract) Interface
     end
     
     methods (Access = public, Abstract)
-        state = update(obj, lin_acc_cmd, tz_cmd);
+        state = update(obj, acc_cmd, tz_cmd);
         %state = UPDATE(obj, acc_cmd, tz_cmd)
         %   Send commands and get new state
         %   Inputs:
-        %       lin_acc_cmd = Global acceleration cmd [m/s^2]
-        %       ang_z_cmd = Heading cmd [rad]
+        %       acc_cmd = Global acceleration cmd [m/s^2]
+        %       tz_cmd = Heading cmd [rad]
         %   Outputs:
         %       state = UAV state [UAV.State]
     end
