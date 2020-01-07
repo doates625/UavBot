@@ -1,9 +1,9 @@
-classdef Matlab < UAV.Interfaces.Sim.Sim
+classdef Matlab < UAV.Interfaces.Sims.Sim
     %MATLAB Matlab simulator for UAV model
     %   Author: Dan Oates (WPI Class of 2020)
     
     properties (Access = protected)
-        ctrl;           % UAV control model [UAV.Models.Ctrl]
+        ctrl_model;     % UAV control model [UAV.Models.Ctrl]
         acc_mag_min;    % Min linear acceleration magnitude [m/s^2]
         acc_mag_max;    % Max linear acceleration magnitude [m/s^2]
         acc_mag_max_sq; % Max linear accel magnitude squared [(m/s^2)^2]
@@ -14,54 +14,60 @@ classdef Matlab < UAV.Interfaces.Sim.Sim
     end
     
     methods (Access = public)
-        function obj = Matlab(phys, ctrl, f_sim)
-            %obj = MATLAB(phys, ctrl, f_sim) Construct matlab simulator
+        function obj = Matlab(phys_model, ctrl_model, f_sim)
+            %obj = MATLAB(phys_model, ctrl_model, f_sim)
+            %   Construct matlab simulator
             %   Inputs:
-            %       phys = UAV physical model [UAV.Models.Phys]
-            %       ctrl = UAV control model [UAV.Models.Ctrl]
+            %       phys_model = UAV physical model [UAV.Models.Phys]
+            %       ctrl_model = UAV control model [UAV.Models.Ctrl]
             %       f_sim = Simulation frequency [Hz]
             
+            % Default args
+            import('UAV.default_arg')
+            if nargin < 3, f_sim = default_arg('f_sim'); end
+            if nargin < 2, ctrl_model = default_arg('ctrl_model'); end
+            if nargin < 1, phys_model = default_arg('phys_model'); end
+            
             % Superconstructor
-            obj = obj@UAV.Interfaces.Sim.Sim(phys, f_sim);
-            obj.ctrl = ctrl;
+            obj = obj@UAV.Interfaces.Sims.Sim(phys_model, f_sim);
+            obj.ctrl_model = ctrl_model;
             
             % Acceleration limits
-            acc_max = 4 * obj.phys.f_max / obj.phys.mass;
-            obj.acc_mag_min = obj.ctrl.fr_min * acc_max;
-            obj.acc_mag_max = obj.ctrl.fr_max * acc_max;
+            acc_max = 4 * obj.phys_model.f_max / obj.phys_model.mass;
+            obj.acc_mag_min = obj.ctrl_model.fr_min * acc_max;
+            obj.acc_mag_max = obj.ctrl_model.fr_max * acc_max;
             obj.acc_mag_max_sq = obj.acc_mag_max^2;
             
             % Quaternion PID controllers
-            obj.quat_x_pid = obj.quat_pid(obj.phys.I_xx, obj.ctrl.s_qx);
-            obj.quat_y_pid = obj.quat_pid(obj.phys.I_yy, obj.ctrl.s_qy);
-            obj.quat_z_pid = obj.quat_pid(obj.phys.I_zz, obj.ctrl.s_qz);
+            obj.quat_x_pid = obj.quat_pid(obj.phys_model.I_xx, obj.ctrl_model.s_qx);
+            obj.quat_y_pid = obj.quat_pid(obj.phys_model.I_yy, obj.ctrl_model.s_qy);
+            obj.quat_z_pid = obj.quat_pid(obj.phys_model.I_zz, obj.ctrl_model.s_qz);
             
             % Quaternion saturation flag
             obj.quat_sat = false;
         end
         
-        function state = update(obj, acc_cmd, tz_cmd)
-            %state = UPDATE(obj, acc_cmd, tz_cmd)
+        function state = update(obj, cmd)
+            %state = UPDATE(obj, cmd)
             %   Send commands and get new state
             %   Inputs:
-            %       acc_cmd = Global acceleration cmd [m/s^2]
-            %       tz_cmd = Heading cmd [rad]
+            %       cmd = UAV command [UAV.Cmd]
             %   Outputs:
             %       state = UAV state [UAV.State]
             
             % Simulate controller
-            [q_cmd, acc_mag] = obj.lap(acc_cmd, tz_cmd);
+            [q_cmd, acc_mag] = obj.lap(cmd.acc, cmd.tz);
             f_ang = obj.qoc(q_cmd);
-            f_lin = obj.phys.M_lin * acc_mag;
+            f_lin = obj.phys_model.M_lin * acc_mag;
             f_prop = obj.frc(f_ang, f_lin);
             
             % Simulate dynamics
-            state = obj.update_sim(f_prop);
+            state = obj.update_sim(f_prop, cmd.state);
         end
     end
     
     methods (Access = protected)
-        function [q_cmd, acc_mag] = lap(acc_cmd, tz_cmd)
+        function [q_cmd, acc_mag] = lap(obj, acc_cmd, tz_cmd)
             %[q_cmd, acc_mag] = LAP(obj, acc_cmd, tz_cmd)
             %   Linear Acceleration Planner
             %   Inputs:
@@ -72,11 +78,10 @@ classdef Matlab < UAV.Interfaces.Sim.Sim
             %       acc_mag = Accel magnitude [m/s^2]
             
             % Adjust for gravity
-            acc_cmd = acc_cmd + obj.phys.g_vec;
+            acc_cmd = acc_cmd + obj.phys_model.g_vec;
             
             % Acceleration limiting
-            acc_cmd(3) = clamp(...
-                acc_cmd(3), obj.acc_mag_min, obj.acc_mag_max);
+            acc_cmd(3) = clamp(acc_cmd(3), obj.acc_mag_min, obj.acc_mag_max);
             norm_xy = norm(acc_cmd(1:2));
             norm_xy_max = sqrt(obj.acc_mag_max_sq - acc_cmd(3)^2);
             p = norm_xy_max / norm_xy;
@@ -115,20 +120,20 @@ classdef Matlab < UAV.Interfaces.Sim.Sim
             %   Outputs:
             %       f_ang = Angular prop forces [N]
             
-            % Compute error vector
-            q_err = q_cmd \ obj.q;
+            % Compute error quaternion
+            q_err = q_cmd \ obj.state.ang_pos;
             if q_err.w < 0
                 q_err = -q_err;
             end
             
             % Compute net torque cmd
             tau = zeros(3, 1);
-            tau(1) = obj.q_x_pid.update(-q_err.x, 0, obj.quat_sat);
-            tau(2) = obj.q_y_pid.update(-q_err.y, 0, obj.quat_sat);
-            tau(3) = obj.q_z_pid.update(-q_err.z, 0, obj.quat_sat);
+            tau(1) = obj.quat_x_pid.update(-q_err.x, 0, obj.quat_sat);
+            tau(2) = obj.quat_y_pid.update(-q_err.y, 0, obj.quat_sat);
+            tau(3) = obj.quat_z_pid.update(-q_err.z, 0, obj.quat_sat);
             
             % Compute force cmd
-            f_ang = obj.phys.D_bar_ang * tau;
+            f_ang = obj.phys_model.D_bar_ang * tau;
         end
         
         function f_prop = frc(obj, f_ang, f_lin)
@@ -144,9 +149,9 @@ classdef Matlab < UAV.Interfaces.Sim.Sim
             p_min = 1;
             for i = 1:4
                 if f_ang(i) > 0
-                    p = (obj.phys.f_max - f_lin(i)) / f_ang(i);
+                    p = (obj.phys_model.f_max - f_lin(i)) / f_ang(i);
                 elseif f_ang(i) < 0
-                    p = (obj.phys.f_min - f_lin(i)) / f_ang(i);
+                    p = (obj.phys_model.f_min - f_lin(i)) / f_ang(i);
                 else
                     p = 1;
                 end
