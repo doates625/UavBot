@@ -9,16 +9,20 @@ classdef Phys < handle
     end
     
     properties (SetAccess = protected)
-        I_xx;   % Inertia x-axis [kg*m^2]
-        I_yy;   % Inertia y-axis [kg*m^2]
-        I_zz;   % Inertia z-axis [kg*m^2]
-        r_x;    % Moment arm x-axis [m]
-        r_y;    % Moment arm y-axis [m]
-        r_z;    % Moment arm z-axis [m]
-        mass;   % Total mass [kg]
-        f_min;  % Min prop force [N]
-        f_max;  % Max prop force [N]
-        D_bar;  % Inv moment arm matrix [m^-1]
+        I_xx;       % Inertia x-axis [kg*m^2]
+        I_yy;       % Inertia y-axis [kg*m^2]
+        I_zz;       % Inertia z-axis [kg*m^2]
+        r_x;        % Moment arm x-axis [m]
+        r_y;        % Moment arm y-axis [m]
+        r_z;        % Moment arm z-axis [m]
+        mass;       % Total mass [kg]
+        f_min;      % Min prop force [N]
+        f_max;      % Max prop force [N]
+        M_ang;      % Angular mass matrix [kg*m^2]
+        M_lin;      % Linear mass matrix [kg]
+        M_bar_ang;  % Inverse angular mass matrix [(kg*m^2)^-1]
+        M_bar_lin;  % Inverse linear mass matrix [kg^-1]
+        D_bar_ang;  % Inverse moment arm matrix [m^-1]
     end
     
     methods (Access = public)
@@ -71,11 +75,20 @@ classdef Phys < handle
             obj.f_max = f_max;
             
             % Derived params
-            obj.D_bar = 0.25 * [...
-                +1/r_x, -1/r_y, +1/r_z; ...
-                -1/r_x, -1/r_y, -1/r_z; ...
-                +1/r_x, +1/r_y, -1/r_z; ...
-                -1/r_x, +1/r_y, +1/r_z];
+            D_mat = [...
+                +rx, -rx, +rx, -rx; ...
+                -ry, -ry, +ry, +ry; ...
+                +rz, -rz, -rz, +rz; ...
+                  1,   1,   1,   1];
+            M_sig = diag([I_xx, I_yy, I_zz, mass]);
+            M_mat = D_mat \ M_sig;
+            obj.M_ang = M_mat(:, 1:3);
+            obj.M_lin = M_mat(:, 4:4);
+            M_bar = inv(M_mat);
+            obj.M_bar_ang = M_bar(1:3, :);
+            obj.M_bar_lin = M_bar(4:4, :);
+            D_bar = inv(D_mat);
+            obj.D_bar_ang = D_bar(:, 1:3);
         end
     end
 end
