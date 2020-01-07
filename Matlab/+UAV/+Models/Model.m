@@ -13,7 +13,7 @@ classdef Model < handle
             %   phys = Physical model [UAV.Models.Phys]
             %   ctrl = Control model [UAV.Models.Ctrl]
             
-            % Defaults
+            % Default args
             import('UAV.default_arg');
             if nargin < 2, ctrl = default_arg('model_ctrl'); end
             if nargin < 1, phys = default_arg('model_phys'); end
