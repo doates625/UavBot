@@ -100,10 +100,10 @@ void Imu::update()
 	omega(2) = bno055.get_gyr_z();
 	
 	// Update accel
-	bno055.update_acc();
-	accel(0) = bno055.get_acc_x();
-	accel(1) = bno055.get_acc_y();
-	accel(2) = bno055.get_acc_z();
+	bno055.update_lia();
+	accel(0) = bno055.get_lia_x();
+	accel(1) = bno055.get_lia_y();
+	accel(2) = bno055.get_lia_z();
 	
 #endif
 }

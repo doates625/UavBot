@@ -27,10 +27,10 @@ namespace Controller
 
 	// Control Constants
 	const float f_ctrl = 50.0f;		// Control freq [Hz]
-	const float s_qx = -3.0f;		// Quat x-axis pole [s^-1]
-	const float s_qy = -3.0f;		// Quat y-axis pole [s^-1]
-	const float s_qz = -3.0f;		// Quat z-axis pole [s^-1]
-	const float s_az = -8.0f;		// Accel z-axis pole [s^-1]
+	const float s_qx = -8.0f;		// Quat x-axis pole [s^-1]
+	const float s_qy = -8.0f;		// Quat y-axis pole [s^-1]
+	const float s_qz = -8.0f;		// Quat z-axis pole [s^-1]
+	const float s_az = -10.0f;		// Accel z-axis pole [s^-1]
 	const float fr_min = 0.1f;		// Min prop thrust ratio [N/N]
 	const float fr_max = 0.9f;		// Max prop thrust ratio [N/N]
 	const float tau_min = -1e10f;	// PID torque min [N*m]
@@ -176,9 +176,9 @@ void Controller::update()
 	Vector<4> f_ang = D_bar * tau_cmd;
 
 	// Acceleration z-axis cmd
-	Vector<3> n_hat = q_act * z_hat;
-	float acc_z_cmd = acc_cmd(2) / n_hat(2);
-	acc_z_cmd = clamp(acc_z_cmd, acc_mag_min, acc_mag_max);
+	acc_cmd(2) -= gravity;
+	Vector<3> acc_cmd_loc = inv(q_act) * acc_cmd;
+	float acc_z_cmd = acc_cmd_loc(2);
 
 	// Acceleration z-axis control
 	float f_lin_sca = acc_z_pid.update(acc_z_cmd - acc_loc(2));

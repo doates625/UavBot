@@ -127,7 +127,7 @@ classdef Remote < UAV.Interfaces.Interface
             end
             ang_pos = Quat(arr(1:4));
             ang_vel = arr(5:7);
-            lin_acc = ang_pos.rotate(arr(8:10)) - obj.phys_model.g_vec;
+            lin_acc = ang_pos.rotate(arr(8:10));
             f_prop = arr(11:14);
             
             % Unpack state
