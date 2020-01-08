@@ -17,17 +17,17 @@ using CppUtil::clamp;
 namespace Motors
 {
 	// Constants
-	const float force_min = 0.00f;
-	const float force_max = 2.46f;
+	const float f_prop_min = 0.00f;
+	const float f_prop_max = 2.46f;
 
 	// ESC Servos
 	const uint8_t motor_pins[4] = { 22, 3, 23, 2 };
 	ServoOut motors[4] = 
 	{
-		ServoOut(motor_pins[0], force_min, force_max),	// M++
-		ServoOut(motor_pins[1], force_min, force_max),	// M+-
-		ServoOut(motor_pins[2], force_min, force_max),	// M-+
-		ServoOut(motor_pins[3], force_min, force_max),	// M--
+		ServoOut(motor_pins[0], f_prop_min, f_prop_max),	// M++
+		ServoOut(motor_pins[1], f_prop_min, f_prop_max),	// M+-
+		ServoOut(motor_pins[2], f_prop_min, f_prop_max),	// M-+
+		ServoOut(motor_pins[3], f_prop_min, f_prop_max),	// M--
 	};
 
 	// Forces Vector
@@ -47,7 +47,7 @@ void Motors::init()
 		// Enable ESCs
 		for (uint8_t i = 0; i < 4; i++)
 		{
-			motors[i].set_cmd(force_min);
+			motors[i].set_cmd(f_prop_min);
 			motors[i].set_enabled(true);
 		}
 		Platform::wait(3.0f);
@@ -76,7 +76,7 @@ void Motors::set_forces(const Vector<4>& forces_)
 {
 	for (uint8_t i = 0; i < 4; i++)
 	{
-		forces(i) = clamp(forces_.get(i), force_min, force_max);
+		forces(i) = clamp(forces_.get(i), f_prop_min, f_prop_max);
 		#if !defined(SIMULATE_PLANT)
 			motors[i].set_cmd(forces(i));
 		#endif

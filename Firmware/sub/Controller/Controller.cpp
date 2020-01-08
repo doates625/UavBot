@@ -8,8 +8,8 @@
 #include <Motors.h>
 #include <CppUtil.h>
 #include <PID.h>
-using Motors::force_min;
-using Motors::force_max;
+using Motors::f_prop_min;
+using Motors::f_prop_max;
 using CppUtil::clamp;
 using CppUtil::sqa;
 
@@ -27,10 +27,10 @@ namespace Controller
 
 	// Control Constants
 	const float f_ctrl = 50.0f;		// Control freq [Hz]
-	const float s_qx = -8.0f;		// Quat x-axis pole [s^-1]
-	const float s_qy = -8.0f;		// Quat y-axis pole [s^-1]
-	const float s_qz = -8.0f;		// Quat z-axis pole [s^-1]
-	const float s_az = -10.0f;		// Accel z-axis pole [s^-1]
+	const float s_qx = -3.0f;		// Quat x-axis pole [s^-1]
+	const float s_qy = -3.0f;		// Quat y-axis pole [s^-1]
+	const float s_qz = -3.0f;		// Quat z-axis pole [s^-1]
+	const float s_az = -1.0f;		// Accel z-axis pole [s^-1]
 	const float fr_min = 0.1f;		// Min prop thrust ratio [N/N]
 	const float fr_max = 0.9f;		// Max prop thrust ratio [N/N]
 	const float tau_min = -1e10f;	// PID torque min [N*m]
@@ -39,12 +39,12 @@ namespace Controller
 	// Derived constants
 	const float t_ctrl_s = 1.0f / f_ctrl;
 	const float t_ctrl_us = 1e6f * t_ctrl_s;
-	const float acc_max = (4.0f * force_max / mass);
+	const float acc_max = (4.0f * f_prop_max / mass);
 	const float acc_mag_min = acc_max * fr_min;
 	const float acc_mag_max = acc_max * fr_max;
 	const float acc_mag_max_sq = sqa(acc_mag_max);
-	const float f_lin_min = force_max * fr_min;
-	const float f_lin_max = force_max * fr_max;
+	const float f_lin_min = f_prop_max * fr_min;
+	const float f_lin_max = f_prop_max * fr_max;
 
 	// Quat x-axis PID controller
 	const float qx_kp = +6.0f * I_xx * powf(s_qx, 2.0f);
@@ -194,8 +194,8 @@ void Controller::update()
 	for (uint8_t i = 0; i < 4; i++)
 	{
 		float p =
-			(f_ang(i) > 0.0f) ? ((force_max - f_lin(i)) / f_ang(i)) :
-			(f_ang(i) < 0.0f) ? ((force_min - f_lin(i)) / f_ang(i)) :
+			(f_ang(i) > 0.0f) ? ((f_prop_max - f_lin(i)) / f_ang(i)) :
+			(f_ang(i) < 0.0f) ? ((f_prop_min - f_lin(i)) / f_ang(i)) :
 			1.0f;
 		if ((0.0f < p) && (p < p_min))
 		{

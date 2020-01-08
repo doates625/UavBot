@@ -12,8 +12,8 @@
 namespace Motors
 {
 	// Constants
-	extern const float force_min;	// Min prop force [N]
-	extern const float force_max;	// Max prop force [N]
+	extern const float f_prop_min;	// Min prop force [N]
+	extern const float f_prop_max;	// Max prop force [N]
 
 	// Functions
 	void init();
