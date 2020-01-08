@@ -23,7 +23,6 @@ classdef Xbox < UAV.CmdSrcs.CmdSrc
             %       wz_max = Max heading cmd rate [rad/s]
             
             % Default args
-            import('UAV.default_arg');
             if nargin < 4, wz_max = pi/4; end
             if nargin < 3, acc_max = 1.0; end
             if nargin < 2, xbox_dz = 0.075; end
