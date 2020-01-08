@@ -45,10 +45,12 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             obj.quat_sat = false;
             
             % Acceleration PID controller
+            acc_kp = 0;
             acc_ki = -0.25 * obj.phys_model.mass * obj.ctrl_model.s_az;
+            acc_kd = 0;
             obj.f_lin_min = obj.phys_model.f_max * obj.ctrl_model.fr_min;
             obj.f_lin_max = obj.phys_model.f_max * obj.ctrl_model.fr_max;
-            obj.acc_z_pid = PID(0, acc_ki, 0, obj.f_lin_min, obj.f_lin_max, obj.f_sim);
+            obj.acc_z_pid = PID(acc_kp, acc_ki, acc_kd, obj.f_lin_min, obj.f_lin_max, obj.f_sim);
         end
         
         function state = update(obj, cmd)
@@ -60,10 +62,14 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             %       state = UAV state [UAV.State]
             
             % Simulate controller
-            [q_cmd, acc_z_cmd] = obj.lap(cmd.acc, cmd.tz);
-            f_ang = obj.qoc(q_cmd);
-            f_lin = obj.lac(acc_z_cmd);
-            f_prop = obj.frc(f_ang, f_lin);
+            if strcmp(cmd.state, 'Enabled')
+                [q_cmd, acc_z_cmd] = obj.lap(cmd.acc, cmd.tz);
+                f_ang = obj.qoc(q_cmd);
+                f_lin = obj.lac(acc_z_cmd);
+                f_prop = obj.frc(f_ang, f_lin);
+            else
+                f_prop = zeros(4, 1);
+            end
             
             % Simulate dynamics
             state = obj.update_sim(f_prop, cmd.state);
