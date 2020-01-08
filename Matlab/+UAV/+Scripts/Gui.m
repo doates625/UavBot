@@ -64,15 +64,15 @@ classdef Gui < handle
             fprintf('UAV GUI\n')
             fprintf('State: %s\n', state.state)
             fprintf('\nControls\n')
-            fprintf('Accel-x: Cmd = %+.2f, Act = %+.2f\n', cmd.acc(1), state.lin_acc(1));
-            fprintf('Accel-y: Cmd = %+.2f, Act = %+.2f\n', cmd.acc(2), state.lin_acc(2));
-            fprintf('Accel-z: Cmd = %+.2f, Act = %+.2f\n', cmd.acc(3), state.lin_acc(3));
-            fprintf('Theta-z: Cmd = %+.2f, Act = %+.2f\n', cmd.tz, state.get_tz());
-            fprintf('\nForces:\n')
-            fprintf('F++: %.2f\n', state.f_prop(1));
-            fprintf('F+-: %.2f\n', state.f_prop(2));
-            fprintf('F-+: %.2f\n', state.f_prop(3));
-            fprintf('F--: %.2f\n', state.f_prop(4));
+            fprintf('Accel-x [m/s^2]: Cmd = %+.2f, Act = %+.2f\n', cmd.acc(1), state.lin_acc(1));
+            fprintf('Accel-y [m/s^2]: Cmd = %+.2f, Act = %+.2f\n', cmd.acc(2), state.lin_acc(2));
+            fprintf('Accel-z [m/s^2]: Cmd = %+.2f, Act = %+.2f\n', cmd.acc(3), state.lin_acc(3));
+            fprintf('Theta-z [rad/s]: Cmd = %+.2f, Act = %+.2f\n', cmd.tz, state.get_tz());
+            fprintf('\nForces [N]:\n')
+            fprintf('F++ = %.2f\n', state.f_prop(1));
+            fprintf('F+- = %.2f\n', state.f_prop(2));
+            fprintf('F-+ = %.2f\n', state.f_prop(3));
+            fprintf('F-- = %.2f\n', state.f_prop(4));
             fprintf('\nFramerate:\n%.1f\n\n', obj.frame_rate)
             
             % Update plots
