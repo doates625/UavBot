@@ -147,6 +147,7 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             
             % Angular force limit
             p_min = 1;
+            obj.quat_sat = false;
             for i = 1:4
                 if f_ang(i) > 0
                     p = (obj.phys_model.f_max - f_lin(i)) / f_ang(i);
@@ -157,15 +158,12 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
                 end
                 if 0 < p && p < p_min
                     p_min = p;
+                    obj.quat_sat = true;
                 end
             end
-            f_ang = p_min * f_ang;
-            
-            % Quaternion saturation flag
-            obj.quat_sat = (p_min < 1);
             
             % Combine forces
-            f_prop = f_ang + f_lin;
+            f_prop = p_min * f_ang + f_lin;
         end
         
         function pid = quat_pid(obj, I, s)
