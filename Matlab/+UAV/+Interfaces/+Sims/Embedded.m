@@ -89,7 +89,8 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
             str = Struct();
             str.set(obj.state.ang_pos.vector(), 'single');
             str.set(obj.state.ang_vel, 'single');
-            acc_loc = obj.state.ang_pos.inv().rotate(obj.state.lin_acc);
+            acc_glo = obj.state.lin_acc + obj.phys_model.g_vec;
+            acc_loc = obj.state.ang_pos.inv().rotate(acc_glo);
             str.set(acc_loc, 'single');
             server.set_tx_data(str.get_buffer());
         end

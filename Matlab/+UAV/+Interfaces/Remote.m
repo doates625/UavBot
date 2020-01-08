@@ -15,16 +15,18 @@ classdef Remote < UAV.Interfaces.Interface
     end
     
     methods (Access = public)
-        function obj = Remote(bt_name)
-            %obj = REMOTE(bt_name) Construct UAV remote with given bluetooth name [char]
+        function obj = Remote(bt_name, phys_model)
+            %obj = REMOTE(bt_name) Construct UAV remote
+            %   Inputs:
+            %       bt_name = Device Bluetooth name [char]
+            %       phys_model = UAV physical model [UAV.Models.Phys]
             
             % Default args
-            if nargin < 1
-                bt_name = 'UavBot';
-            end
+            if nargin < 2, phys_model = UAV.Models.Phys(); end
+            if nargin < 1, bt_name = 'UavBot'; end
             
             % Superconstructor
-            obj = obj@UAV.Interfaces.Interface();
+            obj = obj@UAV.Interfaces.Interface(phys_model);
 
             % Set up serial server
             bluetooth_ = make_bluetooth(bt_name);
@@ -125,7 +127,7 @@ classdef Remote < UAV.Interfaces.Interface
             end
             ang_pos = Quat(arr(1:4));
             ang_vel = arr(5:7);
-            lin_acc = ang_pos.rotate(arr(8:10));
+            lin_acc = ang_pos.rotate(arr(8:10)) - obj.phys_model.g_vec;
             f_prop = arr(11:14);
             
             % Unpack state

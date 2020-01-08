@@ -81,7 +81,7 @@ const Vector<3>& Simulator::get_omega()
 }
 
 /**
- * @brief Returns local acceleration [m/s^2]
+ * @brief Returns local acceleration (with gravity) [m/s^2]
  */
 const Vector<3>& Simulator::get_accel()
 {
