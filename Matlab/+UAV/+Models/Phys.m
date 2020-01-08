@@ -49,16 +49,15 @@ classdef Phys < handle
 
             % Default args
             if nargin == 0
-                import('UAV.default_arg');
-                I_xx = default_arg('I_xx');
-                I_yy = default_arg('I_yy');
-                I_zz = default_arg('I_zz');
-                r_x = default_arg('r_x');
-                r_y = default_arg('r_y');
-                r_z = default_arg('r_z');
-                mass = default_arg('mass');
-                f_min = default_arg('f_min');
-                f_max = default_arg('f_max');
+                I_xx = 1.15e-03;
+                I_yy = 1.32e-03;
+                I_zz = 2.24e-03;
+                r_x = 9.30e-02;
+                r_y = 9.30e-02;
+                r_z = 5.50e-02;
+                mass = 0.546;
+                f_min = 0.00;
+                f_max = 2.46;
             elseif nargin ~= 9
                 error('Invalid nargin.')
             end

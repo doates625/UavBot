@@ -30,9 +30,9 @@ classdef TimeSeq < UAV.CmdSrcs.CmdSrc
             % Default args
             if nargin == 0
                 % Timesteps
-                f_sim = UAV.default_arg('f_sim');
-                t_sim = 1 / f_sim;
-                t_steps = 0:t_sim:10;
+                f_step = 50.0;
+                t_step = 1 / f_step;
+                t_steps = 0:t_step:10;
                 N = length(t_steps);
                 
                 % Acceleration cmds

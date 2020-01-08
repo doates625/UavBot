@@ -97,8 +97,9 @@ classdef Log < handle
             
             % Prop forces
             figure;
-            f_min = UAV.default_arg('f_min');
-            f_max = UAV.default_arg('f_max');
+            model = UAV.Models.Phys();
+            f_min = model.f_min;
+            f_max = model.f_max;
             for i = 1:4
                 subplot(2, 2, i)
                 hold on, grid on

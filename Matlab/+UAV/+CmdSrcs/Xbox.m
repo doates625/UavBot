@@ -24,8 +24,8 @@ classdef Xbox < UAV.CmdSrcs.CmdSrc
             
             % Default args
             import('UAV.default_arg');
-            if nargin < 4, wz_max = default_arg('wz_max'); end
-            if nargin < 3, acc_max = default_arg('acc_max'); end
+            if nargin < 4, wz_max = pi/4; end
+            if nargin < 3, acc_max = 1.0; end
             if nargin < 2, xbox_dz = 0.075; end
             if nargin < 1, xbox_id = 1; end
             

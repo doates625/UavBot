@@ -2,29 +2,29 @@ classdef (Abstract) Sim < UAV.Interfaces.Interface
     %SIM Superclass for simulated UAVs
     %   Author: Dan Oates (WPI Class of 2020)
     
+    properties (Access = public, Constant)
+        f_sim = 50.0;   % Simulation frequency [Hz]
+        t_sim = 0.02;   % Simulation period [s]
+    end
+    
     properties (SetAccess = protected)
         phys_model; % UAV physical model [UAV.Models.Phys]
-        f_sim;      % Simulation frequency [Hz]
-        t_sim;      % Simulation period [s]
     end
     
     methods (Access = public)
-        function obj = Sim(phys_model, f_sim)
-            %obj = SIM(phys_model, f_sim) Construct UAV simulator
+        function obj = Sim(phys_model)
+            %obj = SIM(phys_model) Construct UAV simulator
             %   Inputs:
             %       phys_model = UAV physical model [UAV.Models.Phys]
-            %       f_sim = Simulation frequency [Hz]
             
-            % Default args
-            import('UAV.default_arg');
-            if nargin < 2, f_sim = default_arg('f_sim'); end
-            if nargin < 1, phys_model = default_arg('phys_model'); end
-            
-            % Constructors
+            % Superconstructor
             obj = obj@UAV.Interfaces.Interface();
+            
+            % Physical model
+            if nargin < 1
+                phys_model = UAV.Models.Phys();
+            end
             obj.phys_model = phys_model;
-            obj.f_sim = f_sim;
-            obj.t_sim = 1 / f_sim;
         end
     end
     

@@ -30,13 +30,12 @@ classdef Ctrl
             
             % Default args
             if nargin == 0
-                import('UAV.default_arg');
-                s_qx = default_arg('s_qx');
-                s_qy = default_arg('s_qy');
-                s_qz = default_arg('s_qz');
-                s_az = default_arg('s_az');
-                fr_min = default_arg('fr_min');
-                fr_max = default_arg('fr_max');
+                s_qx = -3.0;
+                s_qy = -3.0;
+                s_qz = -3.0;
+                s_az = -3.0;
+                fr_min = 0.1;
+                fr_max = 0.9;
             elseif nargin ~= 6
                 error('Invalid nargin.')
             end

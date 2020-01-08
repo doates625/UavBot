@@ -20,7 +20,7 @@ classdef Remote < UAV.Interfaces.Interface
             
             % Default args
             if nargin < 1
-                bt_name = UAV.default_arg('bt_name');
+                bt_name = 'UavBot';
             end
             
             % Superconstructor
@@ -32,6 +32,10 @@ classdef Remote < UAV.Interfaces.Interface
             obj.server.add_tx(obj.msg_id_state, 0, @obj.msg_tx_state);
             obj.server.add_tx(obj.msg_id_update, 16, @obj.msg_tx_update);
             obj.server.add_rx(obj.msg_id_update, 57, @obj.msg_rx_update);
+            
+            % Init fields
+            obj.got_resp = false;
+            obj.cmd = [];
         end
         
         function state = update(obj, cmd)

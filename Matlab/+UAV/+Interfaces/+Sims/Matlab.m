@@ -14,22 +14,19 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
     end
     
     methods (Access = public)
-        function obj = Matlab(phys_model, ctrl_model, f_sim)
-            %obj = MATLAB(phys_model, ctrl_model, f_sim)
+        function obj = Matlab(phys_model, ctrl_model)
+            %obj = MATLAB(phys_model, ctrl_model)
             %   Construct matlab simulator
             %   Inputs:
             %       phys_model = UAV physical model [UAV.Models.Phys]
             %       ctrl_model = UAV control model [UAV.Models.Ctrl]
-            %       f_sim = Simulation frequency [Hz]
             
             % Default args
-            import('UAV.default_arg')
-            if nargin < 3, f_sim = default_arg('f_sim'); end
-            if nargin < 2, ctrl_model = default_arg('ctrl_model'); end
-            if nargin < 1, phys_model = default_arg('phys_model'); end
+            if nargin < 2, ctrl_model = UAV.Models.Ctrl(); end
+            if nargin < 1, phys_model = UAV.Models.Phys(); end
             
             % Superconstructor
-            obj = obj@UAV.Interfaces.Sims.Sim(phys_model, f_sim);
+            obj = obj@UAV.Interfaces.Sims.Sim(phys_model);
             obj.ctrl_model = ctrl_model;
             
             % Acceleration limits
