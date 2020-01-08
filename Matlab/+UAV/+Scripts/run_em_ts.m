@@ -5,6 +5,7 @@ clc
 instrreset
 uav = UAV.Interfaces.Sims.Embedded();
 cmd_src = UAV.CmdSrcs.TimeSeq();
-UAV.Scripts.run(uav, cmd_src);
+run_gui = true;
+UAV.Scripts.run(uav, cmd_src, run_gui);
 
 end
