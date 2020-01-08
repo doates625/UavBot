@@ -14,13 +14,48 @@ classdef TimeSeq < UAV.CmdSrcs.CmdSrc
     
     methods (Access = public)
         function obj = TimeSeq(t_steps, acc_cmds, tz_cmds)
-            %obj = TIMESEQ(t_steps, acc_cmds, tz_cmds)
-            %    Construct command time sequence
-            %    Inputs:
-            %        t_steps = Timesteps [1 x N] [s]
-            %        acc_cmds = Global acceleration cmds [3 x N] [m/s^2]
-            %        tz_cmds = Heading cmds [1 x N] [rad]
-            %    Timesteps must be evenly-spaced.
+            %TIMESEQ Construct command time sequence
+            %   
+            %   obj = TIMESEQ(t_steps, acc_cmds, tz_cmds)
+            %       Construct custom sequence
+            %       Inputs:
+            %           t_steps = Timesteps [1 x N] [s]
+            %           acc_cmds = Global acceleration cmds [3 x N] [m/s^2]
+            %           tz_cmds = Heading cmds [1 x N] [rad]
+            %   
+            %   obj = TIMESEQ() Construct default sequence
+            %   
+            %   Timesteps must be evenly-spaced.
+            
+            % Default args
+            if nargin == 0
+                % Timesteps
+                f_sim = UAV.default_arg('f_sim');
+                t_sim = 1 / f_sim;
+                t_steps = 0:t_sim:10;
+                N = length(t_steps);
+                
+                % Acceleration cmds
+                acc_cmds = zeros(3, N);
+                acc_cmds(1, t_steps >= 0) = +5;
+                acc_cmds(1, t_steps >= 2) = -5;
+                acc_cmds(1, t_steps >= 4) = 0;
+                acc_cmds(2, t_steps >= 4) = +5;
+                acc_cmds(2, t_steps >= 6) = -5;
+                acc_cmds(2, t_steps >= 8) = 0;
+                acc_cmds(3, t_steps >= 3) = +5;
+                acc_cmds(3, t_steps >= 5) = -5;
+                acc_cmds(3, t_steps >= 7) = 0;
+                
+                % Heading cmds
+                tz_cmds = zeros(1, N);
+                tz_cmds(t_steps >= 0) = t_steps;
+                tz_cmds = wrap(tz_cmds, -pi, +pi);
+            elseif nargin ~= 3
+                error('Invalid nargin.')
+            end
+            
+            % Copy args
             obj.t_steps = t_steps;
             obj.acc_cmds = acc_cmds;
             obj.tz_cmds = tz_cmds;
