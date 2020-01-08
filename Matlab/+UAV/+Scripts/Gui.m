@@ -1,4 +1,4 @@
-classdef GUI < handle
+classdef Gui < handle
     %GUI Classfor displaying and plotting UAV state in real-time
     %   Author: Dan Oates (WPI Class of 2020)
     
@@ -11,7 +11,7 @@ classdef GUI < handle
     end
     
     methods
-        function obj = GUI(fig)
+        function obj = Gui(fig)
             %obj = GUI(fig) Create UAV GUI on given figure handle [Figure]
             %   If no handle is given, a new figure is created.
             

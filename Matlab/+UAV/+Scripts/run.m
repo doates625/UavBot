@@ -11,7 +11,7 @@ if nargin < 1, uav = UAV.Interfaces.Sims.Matlab(); end
 
 % Create GUI
 fig = figure(1);
-gui = UAV.GUI(fig);
+gui = UAV.Gui(fig);
 
 % Loop timer
 timer = Timer();
