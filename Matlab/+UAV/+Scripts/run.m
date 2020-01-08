@@ -5,6 +5,7 @@ function run(uav, cmd_src, run_gui)
 %       cmd_src = Command source [UAV.CmdSrcs.CmdSrc]
 %       run_gui = Flag to run GUI [logical]
 %   Author: Dan Oates (WPI Class of 2020)
+close, clc
 
 % Default args
 if nargin < 3, run_gui = true; end
