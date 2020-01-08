@@ -3,12 +3,16 @@ classdef (Abstract) Interface < handle
     %   Author: Dan Oates (WPI Class of 2020)
     
     properties (SetAccess = protected)
-    	state;  % UAV state [UAV.State]
+        phys_model; % UAV physical model [UAV.Models.Phys]
+    	state;      % UAV state [UAV.State]
     end
     
     methods (Access = public)
-        function obj = Interface()
+        function obj = Interface(phys_model)
             %obj = INTERFACE() Construct UAV interface
+            %   Inputs:
+            %       phys_model = UAV physical model [UAV.Models.Phys]
+            obj.phys_model = phys_model;
             obj.state = UAV.State();
         end
     end

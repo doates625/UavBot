@@ -7,24 +7,12 @@ classdef (Abstract) Sim < UAV.Interfaces.Interface
         t_sim = 0.02;   % Simulation period [s]
     end
     
-    properties (SetAccess = protected)
-        phys_model; % UAV physical model [UAV.Models.Phys]
-    end
-    
     methods (Access = public)
         function obj = Sim(phys_model)
             %obj = SIM(phys_model) Construct UAV simulator
             %   Inputs:
             %       phys_model = UAV physical model [UAV.Models.Phys]
-            
-            % Superconstructor
-            obj = obj@UAV.Interfaces.Interface();
-            
-            % Physical model
-            if nargin < 1
-                phys_model = UAV.Models.Phys();
-            end
-            obj.phys_model = phys_model;
+            obj = obj@UAV.Interfaces.Interface(phys_model);
         end
     end
     
