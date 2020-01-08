@@ -88,22 +88,22 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             %       acc_z_cmd = Local z-axis acceleration cmd [m/s^2]
             
             % Adjust for gravity
-            acc_cmd = acc_cmd + obj.phys_model.g_vec;
+            acc_cmd_adj = acc_cmd + obj.phys_model.g_vec;
             
             % Acceleration limiting
-            acc_cmd(3) = clamp(acc_cmd(3), obj.acc_mag_min, obj.acc_mag_max);
-            norm_xy = norm(acc_cmd(1:2));
-            norm_xy_max = sqrt(obj.acc_mag_max_sq - acc_cmd(3)^2);
+            acc_cmd_adj(3) = clamp(acc_cmd_adj(3), obj.acc_mag_min, obj.acc_mag_max);
+            norm_xy = norm(acc_cmd_adj(1:2));
+            norm_xy_max = sqrt(obj.acc_mag_max_sq - acc_cmd_adj(3)^2);
             p = norm_xy_max / norm_xy;
             if p < 1
-                acc_cmd(1:2) = p * acc_cmd(1:2);
+                acc_cmd_adj(1:2) = p * acc_cmd_adj(1:2);
             end
             
             % Orientation
             qz = Quat([0; 0; 1], tz_cmd);
-            norm_acc = norm(acc_cmd);
+            norm_acc = norm(acc_cmd_adj);
             if norm_acc > 0
-                acc_hat = acc_cmd / norm_acc;
+                acc_hat = acc_cmd_adj / norm_acc;
                 cz = cos(tz_cmd);
                 sz = sin(tz_cmd);
                 tx = asin(sz*acc_hat(1) - cz*acc_hat(2));
@@ -116,10 +116,9 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             end
             
             % Acceleration z-axis cmd
-            z_hat = [0; 0; 1];
-            n_hat = obj.state.ang_pos.rotate(z_hat);
-            acc_z_cmd = acc_cmd(3) / n_hat(3);
-            acc_z_cmd = clamp(acc_z_cmd, obj.acc_mag_min, obj.acc_mag_max);
+            acc_cmd_lim = acc_cmd_adj - obj.phys_model.g_vec;
+            acc_cmd_loc = obj.state.ang_pos.inv().rotate(acc_cmd_lim);
+            acc_z_cmd = acc_cmd_loc(3);
         end
         
         function f_ang = qoc(obj, q_cmd)
@@ -153,7 +152,7 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             %       acc_z_cmd = Local z-axis acceleration cmd [m/s^2]
             %   Outputs:
             %       f_lin = Linear prop force vector [N]
-            acc_glo = obj.state.lin_acc + obj.phys_model.g_vec;
+            acc_glo = obj.state.lin_acc;
             acc_loc = obj.state.ang_pos.inv().rotate(acc_glo);
             f_lin = ones(4, 1) * obj.acc_z_pid.update(acc_z_cmd - acc_loc(3));
         end
