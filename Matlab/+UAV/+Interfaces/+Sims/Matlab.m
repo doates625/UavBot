@@ -154,7 +154,8 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             %       f_lin = Linear prop force vector [N]
             acc_glo = obj.state.lin_acc;
             acc_loc = obj.state.ang_pos.inv().rotate(acc_glo);
-            f_lin = ones(4, 1) * obj.acc_z_pid.update(acc_z_cmd - acc_loc(3));
+            f_lin = obj.acc_z_pid.update(acc_z_cmd - acc_loc(3));
+            f_lin = ones(4, 1) * f_lin;
         end
         
         function f_prop = frc(obj, f_ang, f_lin)
