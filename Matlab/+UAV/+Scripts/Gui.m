@@ -8,6 +8,7 @@ classdef Gui < handle
         plot_ang_vel;   % Angular velocity plot [VectorPlot3D]
         frame_cnt;      % Frame count [cnts]
         frame_rate;     % Frame rate estimate [Hz]
+        timer;          % Timer object [Timer]
     end
     
     methods
@@ -43,6 +44,7 @@ classdef Gui < handle
             % Frame rate tracking
             obj.frame_cnt = 0;
             obj.frame_rate = 0;
+            obj.timer = Timer();
         end
         
         function update(obj, state, cmd, t)
@@ -51,6 +53,11 @@ classdef Gui < handle
             %       state = UAV state [UAV.State]
             %       cmd = UAV command [UAV.Cmd]
             %       t = Time [s]
+            
+            % Start timing on first frame
+            if obj.frame_cnt == 0
+                obj.timer.tic();
+            end
             
             % Update console
             clc
@@ -78,8 +85,7 @@ classdef Gui < handle
             
             % Estimate frame rate
             obj.frame_cnt = obj.frame_cnt + 1;
-            obj.frame_rate = obj.frame_cnt / t;
+            obj.frame_rate = obj.frame_cnt / obj.timer.toc();
         end
     end
 end
-
