@@ -54,6 +54,7 @@ switch name
     case 'f_sim', arg = 50.0;
         
     % Communication
+    case 'remote', arg = UAV.Interfaces.Remote();
     case 'bt_name', arg = 'UavBot';
     case 'sim_port', arg = 'COM17';
         
