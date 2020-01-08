@@ -7,10 +7,13 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
         acc_mag_min;    % Min linear acceleration magnitude [m/s^2]
         acc_mag_max;    % Max linear acceleration magnitude [m/s^2]
         acc_mag_max_sq; % Max linear accel magnitude squared [(m/s^2)^2]
-        quat_x_pid;     % Quaternion x-axis PID controller [PID]
-        quat_y_pid;     % Quaternion y-axis PID controller [PID]
-        quat_z_pid;     % Quaternion z-axis PID controller [PID]
+        quat_x_pid;     % Quaternion x-axis ctrl [PID]
+        quat_y_pid;     % Quaternion y-axis ctrl [PID]
+        quat_z_pid;     % Quaternion z-axis ctrl [PID]
         quat_sat;       % Quaternion PID saturation flag [logical]
+        acc_z_pid;      % Acceleration local-z ctrl [PID]
+        f_lin_min;      % Min linear force [N]
+        f_lin_max;      % Max linear force [N]
     end
     
     methods (Access = public)
@@ -39,9 +42,13 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             obj.quat_x_pid = obj.quat_pid(obj.phys_model.I_xx, obj.ctrl_model.s_qx);
             obj.quat_y_pid = obj.quat_pid(obj.phys_model.I_yy, obj.ctrl_model.s_qy);
             obj.quat_z_pid = obj.quat_pid(obj.phys_model.I_zz, obj.ctrl_model.s_qz);
-            
-            % Quaternion saturation flag
             obj.quat_sat = false;
+            
+            % Acceleration PID controller
+            acc_ki = -0.25 * obj.phys_model.mass * obj.ctrl_model.s_az;
+            obj.f_lin_min = obj.phys_model.f_max * obj.ctrl_model.fr_min;
+            obj.f_lin_max = obj.phys_model.f_max * obj.ctrl_model.fr_max;
+            obj.acc_z_pid = PID(0, acc_ki, 0, obj.f_lin_min, obj.f_lin_max, obj.f_sim);
         end
         
         function state = update(obj, cmd)
@@ -53,9 +60,9 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             %       state = UAV state [UAV.State]
             
             % Simulate controller
-            [q_cmd, acc_mag] = obj.lap(cmd.acc, cmd.tz);
+            [q_cmd, acc_z_cmd] = obj.lap(cmd.acc, cmd.tz);
             f_ang = obj.qoc(q_cmd);
-            f_lin = obj.phys_model.M_lin * acc_mag;
+            f_lin = obj.lac(acc_z_cmd);
             f_prop = obj.frc(f_ang, f_lin);
             
             % Simulate dynamics
@@ -64,15 +71,15 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
     end
     
     methods (Access = protected)
-        function [q_cmd, acc_mag] = lap(obj, acc_cmd, tz_cmd)
-            %[q_cmd, acc_mag] = LAP(obj, acc_cmd, tz_cmd)
+        function [q_cmd, acc_z_cmd] = lap(obj, acc_cmd, tz_cmd)
+            %[q_cmd, acc_z_cmd] = LAP(obj, acc_cmd, tz_cmd)
             %   Linear Acceleration Planner
             %   Inputs:
             %       acc_cmd = Global acceleration cmd [m/s^2]
             %       tz_cmd = Heading cmd [rad]
             %   Outputs:
             %       q_cmd = Orientation cmd [Quat]
-            %       acc_mag = Accel magnitude [m/s^2]
+            %       acc_z_cmd = Local z-axis acceleration cmd [m/s^2]
             
             % Adjust for gravity
             acc_cmd = acc_cmd + obj.phys_model.g_vec;
@@ -102,11 +109,11 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
                 q_cmd = qz;
             end
             
-            % Acceleration magnitude
+            % Acceleration z-axis cmd
             z_hat = [0; 0; 1];
             n_hat = obj.state.ang_pos.rotate(z_hat);
-            acc_mag = acc_cmd(3) / n_hat(3);
-            acc_mag = clamp(acc_mag, obj.acc_mag_min, obj.acc_mag_max);
+            acc_z_cmd = acc_cmd(3) / n_hat(3);
+            acc_z_cmd = clamp(acc_z_cmd, obj.acc_mag_min, obj.acc_mag_max);
         end
         
         function f_ang = qoc(obj, q_cmd)
@@ -131,6 +138,18 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             
             % Compute force cmd
             f_ang = obj.phys_model.D_bar_ang * tau;
+        end
+        
+        function f_lin = lac(obj, acc_z_cmd)
+            %f_lin = LAC(obj, acc_mag_cmd)
+            %   Local acceleration controller
+            %   Inputs:
+            %       acc_z_cmd = Local z-axis acceleration cmd [m/s^2]
+            %   Outputs:
+            %       f_lin = Linear prop force vector [N]
+            acc_glo = obj.state.lin_acc + obj.phys_model.g_vec;
+            acc_loc = obj.state.ang_pos.inv().rotate(acc_glo);
+            f_lin = ones(4, 1) * obj.acc_z_pid.update(acc_z_cmd - acc_loc(3));
         end
         
         function f_prop = frc(obj, f_ang, f_lin)
