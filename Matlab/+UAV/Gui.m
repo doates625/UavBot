@@ -22,6 +22,8 @@ classdef Gui < handle
             
             % Format figure
             figure(fig)
+            fig.Units = 'normalized';
+            fig.Position = [0.5005, 0.0380, 0.4990, 0.8833];
             clf, hold on, grid on
             title('UAV Pose')
             xlabel('x')
