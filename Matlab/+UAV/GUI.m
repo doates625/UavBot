@@ -12,9 +12,7 @@ classdef GUI < handle
     
     methods
         function obj = GUI(fig)
-            %obj = GUI(fig) Create UAV GUI
-            %   Inputs:
-            %       fig = Figure handle
+            %obj = GUI(fig) Create UAV GUI on given figure handle [Figure]
             %   If no handle is given, a new figure is created.
             
             % Get figure
