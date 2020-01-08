@@ -5,7 +5,7 @@ function run_matlab_timeseq()
 import('UAV.default_arg');
 
 % Matlab simulator
-f_sim = 40;
+f_sim = 50;
 phys_model = default_arg('phys_model');
 ctrl_model = default_arg('ctrl_model');
 uav = UAV.Interfaces.Sims.Matlab(phys_model, ctrl_model, f_sim);

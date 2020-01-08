@@ -8,6 +8,8 @@ classdef Xbox < UAV.CmdSrcs.CmdSrc
         wz_max;     % Max heading cmd rate [rad/s]
         tz_int;     % Angle cmd integrator [Integrator]
         state;      % State cmd [char]
+        timer;      % Timer object [Timer]
+        first_get;  % First get flag [logical]
     end
     
     methods (Access = public)
@@ -17,8 +19,8 @@ classdef Xbox < UAV.CmdSrcs.CmdSrc
             %   Inputs:
             %       xbox_id = Joystick ID [1-4]
             %       xbox_dz = Joystick dead zone [0-1]
-            %       acc_max = 
-            %       wz_max = 
+            %       acc_max = Max acceleration cmd [m/s^2]
+            %       wz_max = Max heading cmd rate [rad/s]
             
             % Default args
             import('UAV.default_arg');
@@ -33,14 +35,15 @@ classdef Xbox < UAV.CmdSrcs.CmdSrc
             obj.wz_max = wz_max;
             obj.tz_int = Integrator();
             obj.state = 'Disabled';
+            obj.timer = Timer();
+            obj.first_get = true;
         end
         
-        function cmd = get_cmd(obj, ~)
-            %cmd = GET_CMD(obj, t) Get commands
-            %   Inputs:
-            %       t = Time [s]
+        function [cmd, t] = get_cmd(obj)
+            %[cmd, t] = GET_CMD(obj) Get commands and time
             %   Outputs:
             %       cmd = UAV command [UAV.Cmd]
+            %       t = Time [s]
             
             % Parse heading command
             wz = -obj.wz_max * obj.xbox.axis('Rx');
@@ -59,6 +62,15 @@ classdef Xbox < UAV.CmdSrcs.CmdSrc
             
             % Form command
             cmd = UAV.Cmd(acc, tz, obj.state);
+            
+            % Get time
+            if obj.first_get
+                t = 0;
+                obj.timer.tic();
+                obj.first_get = false;
+            else
+                t = obj.timer.toc();
+            end
         end
         
         function stop = get_stop(obj)

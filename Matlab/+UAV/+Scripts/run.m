@@ -9,21 +9,19 @@ function run(uav, cmd_src)
 if nargin < 2, cmd_src = UAV.CmdSrcs.Xbox(); end
 if nargin < 1, uav = UAV.Interfaces.Sims.Matlab(); end
 
-% Create GUI
+% Initializations
 fig = figure(1);
-gui = UAV.Gui(fig);
-
-% Loop timer
-timer = Timer();
+gui = UAV.Scripts.Gui(fig);
+log = UAV.Scripts.Log();
 
 % Command loop
 while true
     
     % Loop routines
-    t = timer.toc();
-    cmd = cmd_src.get_cmd(t);
+    [cmd, t] = cmd_src.get_cmd();
     state = uav.update(cmd);
     gui.update(state, cmd, t);
+    log.update(state, cmd, t);
     drawnow
     
     % Exit condition
@@ -31,5 +29,8 @@ while true
         break
     end
 end
+
+% Plot log
+log.plot();
 
 end
