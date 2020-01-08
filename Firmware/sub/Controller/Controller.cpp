@@ -18,19 +18,19 @@ using CppUtil::sqa;
  */
 namespace Controller
 {
-	// Physical constants
+	// Physical Constants
 	const float I_xx = 1.15e-03f;	// Inertia x-axis [kg*m^2]
 	const float I_yy = 1.32e-03f;	// Inertia y-axis [kg*m^2]
 	const float I_zz = 2.24e-03f;	// Inertia z-axis [kg*m^2]
 	const float mass = 0.546f;		// Total mass [kg]
 	const float gravity = 9.807f;	// Gravity [m/s^2]
 
-	// Control constants
-	const float f_ctrl = 50.0f; 	// Control freq [Hz]
+	// Control Constants
+	const float f_ctrl = 50.0f;		// Control freq [Hz]
 	const float s_qx = -3.0f;		// Quat x-axis pole [s^-1]
 	const float s_qy = -3.0f;		// Quat y-axis pole [s^-1]
 	const float s_qz = -3.0f;		// Quat z-axis pole [s^-1]
-	const float s_az = -3.0f;		// Accel z-axis pole [s^-1]
+	const float s_az = -8.0f;		// Accel z-axis pole [s^-1]
 	const float fr_min = 0.1f;		// Min prop thrust ratio [N/N]
 	const float fr_max = 0.9f;		// Max prop thrust ratio [N/N]
 	const float tau_min = -1e10f;	// PID torque min [N*m]
@@ -43,6 +43,8 @@ namespace Controller
 	const float acc_mag_min = acc_max * fr_min;
 	const float acc_mag_max = acc_max * fr_max;
 	const float acc_mag_max_sq = sqa(acc_mag_max);
+	const float f_lin_min = force_max * fr_min;
+	const float f_lin_max = force_max * fr_max;
 
 	// Quat x-axis PID controller
 	const float qx_kp = +6.0f * I_xx * powf(s_qx, 2.0f);
@@ -62,12 +64,17 @@ namespace Controller
 	const float qz_kd = -6.0f * I_zz * powf(s_qz, 1.0f);
 	PID quat_z_pid(qz_kp, qz_ki, qz_kd, -HUGE_VALF, +HUGE_VALF, f_ctrl);
 
+	// Accel z-axis PID controller
+	const float az_kp = 0.0f;
+	const float az_ki = -0.25f * mass * s_az;
+	const float az_kd = 0.0f;
+	PID acc_z_pid(az_kp, az_ki, az_kd, f_lin_min, f_lin_max, f_ctrl);
+
 	// Vectors and matrices
 	Vector<3> x_hat;
 	Vector<3> y_hat;
 	Vector<3> z_hat;
 	Matrix<4, 3> D_bar;
-	Matrix<4, 1> M_lin;
 	Vector<4> forces;
 
 	// Quaternion PID saturation flag
@@ -113,12 +120,6 @@ void Controller::init()
 		D_bar(3, 1) = +2.688172e+00f;
 		D_bar(3, 2) = +4.545455e+00f;
 
-		// Initialize linear mass matrix
-		M_lin(0, 0) = +1.365000e-01f;
-		M_lin(1, 0) = +1.365000e-01f;
-		M_lin(2, 0) = +1.365000e-01f;
-		M_lin(3, 0) = +1.365000e-01f;
-
 		// Set init flag
 		init_complete = true;
 	}
@@ -131,6 +132,7 @@ void Controller::update()
 {
 	// Get state and commands
 	Quat q_act = Imu::get_quat();
+	Vector<3> acc_loc = Imu::get_accel();
 	Vector<3> acc_cmd = Bluetooth::get_acc_cmd();
 	float tz_cmd = Bluetooth::get_tz_cmd();
 
@@ -148,7 +150,7 @@ void Controller::update()
 		acc_cmd(1) *= p;
 	}
 
-	// Orientation calculation
+	// Orientation cmd
 	Quat q_z(z_hat, tz_cmd);
 	Quat q_cmd = q_z;
 	float norm_acc = norm(acc_cmd);
@@ -164,11 +166,6 @@ void Controller::update()
 		q_cmd = q_z * q_y * q_x;
 	}
 
-	// Acceleration magnitude cmd
-	Vector<3> n_hat = q_act * z_hat;
-	float acc_mag_cmd = acc_cmd(2) / n_hat(2);
-	acc_mag_cmd = clamp(acc_mag_cmd, acc_mag_min, acc_mag_max);
-
 	// Quaternion control
 	Quat q_err = inv(q_cmd) * q_act;
 	if (q_err.w < 0.0f) q_err = -q_err;
@@ -178,8 +175,18 @@ void Controller::update()
 	tau_cmd(2) = quat_z_pid.update(-q_err.z, 0.0f, quat_sat);
 	Vector<4> f_ang = D_bar * tau_cmd;
 
-	// Acceleration magnitude control
-	Vector<4> f_lin = M_lin * Vector<1>(acc_mag_cmd);
+	// Acceleration z-axis cmd
+	Vector<3> n_hat = q_act * z_hat;
+	float acc_z_cmd = acc_cmd(2) / n_hat(2);
+	acc_z_cmd = clamp(acc_z_cmd, acc_mag_min, acc_mag_max);
+
+	// Acceleration z-axis control
+	float f_lin_sca = acc_z_pid.update(acc_z_cmd - acc_loc(2));
+	Vector<4> f_lin;
+	for (uint8_t i = 0; i < 4; i++)
+	{
+		f_lin(i) = f_lin_sca;
+	}
 
 	// Force regulator controller
 	float p_min = 1.0f;
@@ -197,6 +204,19 @@ void Controller::update()
 		}
 	}
 	forces = p_min * f_ang + f_lin;
+}
+
+/**
+ * @brief Resets controller to startup state
+ */
+void Controller::reset()
+{
+	quat_x_pid.reset();
+	quat_y_pid.reset();
+	quat_z_pid.reset();
+	acc_z_pid.reset();
+	quat_sat = false;
+	forces = Vector<4>();
 }
 
 /**

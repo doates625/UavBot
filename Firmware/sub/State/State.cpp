@@ -27,6 +27,7 @@ void State::update()
 	{
 		// Enabled state
 		case state_enabled:
+			Controller::update();
 			Motors::set_forces(Controller::get_forces());
 			state = Imu::is_flipped() ?
 				state_failed : (state_t)Bluetooth::get_state_cmd();
@@ -36,6 +37,10 @@ void State::update()
 		case state_disabled:
 			Motors::set_forces(Vector<4>());
 			state = (state_t)Bluetooth::get_state_cmd();
+			if (state == state_enabled)
+			{
+				Controller::reset();
+			}
 			break;
 
 		// Failed state (terminal)

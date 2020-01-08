@@ -18,5 +18,6 @@ namespace Controller
 	// Functions
 	void init();
 	void update();
+	void reset();
 	const Vector<4>& get_forces();
 }

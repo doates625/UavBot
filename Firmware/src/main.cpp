@@ -75,7 +75,6 @@ void run_ctrl()
 
 	// Control system
 	Imu::update();
-	Controller::update();
 	State::update();
 	
 	// End loop
