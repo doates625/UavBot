@@ -84,8 +84,8 @@ classdef Remote < UAV.Interfaces.Interface
             %   [08-11] Global accel z [single, m/s^2]
             %   [12-15] Heading cmd [single, rad]
             str = Struct();
-            str.set(obj.acc_cmd, 'single');
-            str.set(obj.tz_cmd, 'single');
+            str.set(obj.cmd.acc, 'single');
+            str.set(obj.cmd.tz, 'single');
             server.set_tx_data(str.get_buffer());
         end
         

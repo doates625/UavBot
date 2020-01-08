@@ -28,27 +28,18 @@ void State::update()
 		// Enabled state
 		case state_enabled:
 			Motors::set_forces(Controller::get_forces());
-			if (Imu::is_flipped())
-			{
-				state = state_failure;
-			}
-			else if (!Bluetooth::get_enable_cmd())
-			{
-				state = state_disabled;
-			}
+			state = Imu::is_flipped() ?
+				state_failed : (state_t)Bluetooth::get_state_cmd();
 			break;
 		
 		// Disabled state
 		case state_disabled:
 			Motors::set_forces(Vector<4>());
-			if (Bluetooth::get_enable_cmd())
-			{
-				state = state_enabled;
-			}
+			state = (state_t)Bluetooth::get_state_cmd();
 			break;
 
-		// Failure state (terminal)
-		case state_failure:
+		// Failed state (terminal)
+		case state_failed:
 			Motors::set_forces(Vector<4>());
 			break;
 	}

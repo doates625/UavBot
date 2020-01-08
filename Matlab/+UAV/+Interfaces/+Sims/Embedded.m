@@ -41,6 +41,9 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
             obj.server = SerialServer(serial_, obj.start_byte);
             obj.server.add_tx(obj.msg_id_update, 40, @obj.msg_tx_update);
             obj.server.add_rx(obj.msg_id_update, 16, @obj.msg_rx_update);
+
+            % Init fields
+            obj.f_prop = zeros(4, 1);
         end
         
         function state = update(obj, cmd)

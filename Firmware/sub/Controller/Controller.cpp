@@ -7,6 +7,7 @@
 #include <Bluetooth.h>
 #include <Motors.h>
 #include <CppUtil.h>
+#include <PID.h>
 using Motors::force_min;
 using Motors::force_max;
 using CppUtil::clamp;
@@ -17,34 +18,62 @@ using CppUtil::sqa;
  */
 namespace Controller
 {
-	// Constants
-	const float f_ctrl = 50.0f;		// Control freq [Hz]
-	const float mass = 0.546f;		// UAV mass [kg]
+	// Physical constants
+	const float I_xx = 1.15e-03f;	// Inertia x-axis [kg*m^2]
+	const float I_yy = 1.32e-03f;	// Inertia y-axis [kg*m^2]
+	const float I_zz = 2.24e-03f;	// Inertia z-axis [kg*m^2]
+	const float mass = 0.546f;		// Total mass [kg]
 	const float gravity = 9.807f;	// Gravity [m/s^2]
-	const float q_pole = -10.0f;	// Quat pole [s^-1] (was -30)
-	const float th_min = 0.1f;		// Min thrust [N/N]
-	const float th_max = 0.9f;		// Max thrust [N/N]
+
+	// Control constants
+	const float f_ctrl = 50.0f; 	// Control freq [Hz]
+	const float s_qx = -3.0f;		// Quat x-axis pole [s^-1]
+	const float s_qy = -3.0f;		// Quat y-axis pole [s^-1]
+	const float s_qz = -3.0f;		// Quat z-axis pole [s^-1]
+	const float s_az = -3.0f;		// Accel z-axis pole [s^-1]
+	const float fr_min = 0.1f;		// Min prop thrust ratio [N/N]
+	const float fr_max = 0.9f;		// Max prop thrust ratio [N/N]
+	const float tau_min = -1e10f;	// PID torque min [N*m]
+	const float tau_max = +1e10f;	// PID torque max [N*m]
 
 	// Derived constants
 	const float t_ctrl_s = 1.0f / f_ctrl;
 	const float t_ctrl_us = 1e6f * t_ctrl_s;
 	const float acc_max = (4.0f * force_max / mass);
-	const float acc_mag_min = acc_max * th_min;
-	const float acc_mag_max = acc_max * th_max;
+	const float acc_mag_min = acc_max * fr_min;
+	const float acc_mag_max = acc_max * fr_max;
 	const float acc_mag_max_sq = sqa(acc_mag_max);
-	const float gain_p = sqa(q_pole);
-	const float gain_d = -2.0f * q_pole;
+
+	// Quat x-axis PID controller
+	const float qx_kp = +6.0f * I_xx * powf(s_qx, 2.0f);
+	const float qx_ki = -2.0f * I_xx * powf(s_qx, 3.0f);
+	const float qx_kd = -6.0f * I_xx * powf(s_qx, 1.0f);
+	PID quat_x_pid(qx_kp, qx_ki, qx_kd, -HUGE_VALF, +HUGE_VALF, f_ctrl);
+
+	// Quat y-axis PID controller
+	const float qy_kp = +6.0f * I_yy * powf(s_qy, 2.0f);
+	const float qy_ki = -2.0f * I_yy * powf(s_qy, 3.0f);
+	const float qy_kd = -6.0f * I_yy * powf(s_qy, 1.0f);
+	PID quat_y_pid(qy_kp, qy_ki, qy_kd, -HUGE_VALF, +HUGE_VALF, f_ctrl);
+
+	// Quat z-axis PID controller
+	const float qz_kp = +6.0f * I_zz * powf(s_qz, 2.0f);
+	const float qz_ki = -2.0f * I_zz * powf(s_qz, 3.0f);
+	const float qz_kd = -6.0f * I_zz * powf(s_qz, 1.0f);
+	PID quat_z_pid(qz_kp, qz_ki, qz_kd, -HUGE_VALF, +HUGE_VALF, f_ctrl);
 
 	// Vectors and matrices
 	Vector<3> x_hat;
 	Vector<3> y_hat;
 	Vector<3> z_hat;
-	Matrix<4, 3> M_alp;
-	Matrix<4, 1> M_acc;
-	Vector<3> q_err_int;
+	Matrix<4, 3> D_bar;
+	Matrix<4, 1> M_lin;
 	Vector<4> forces;
 
-	// Init flag
+	// Quaternion PID saturation flag
+	bool quat_sat = false;
+
+	// Flags
 	bool init_complete = false;
 }
 
@@ -70,25 +99,25 @@ void Controller::init()
 		z_hat(1) = +0.000000e+00f;
 		z_hat(2) = +1.000000e+00f;
 
-		// Initialize angular mass matrix
-		M_alp(0, 0) = +3.091398e-03f;
-		M_alp(0, 1) = -3.548387e-03f;
-		M_alp(0, 2) = +1.018182e-02f;
-		M_alp(1, 0) = -3.091398e-03f;
-		M_alp(1, 1) = -3.548387e-03f;
-		M_alp(1, 2) = -1.018182e-02f;
-		M_alp(2, 0) = +3.091398e-03f;
-		M_alp(2, 1) = +3.548387e-03f;
-		M_alp(2, 2) = -1.018182e-02f;
-		M_alp(3, 0) = -3.091398e-03f;
-		M_alp(3, 1) = +3.548387e-03f;
-		M_alp(3, 2) = +1.018182e-02f;
+		// Initialize inverse moment arm matrix
+		D_bar(0, 0) = +2.688172e+00f;
+		D_bar(0, 1) = -2.688172e+00f;
+		D_bar(0, 2) = +4.545455e+00f;
+		D_bar(1, 0) = -2.688172e+00f;
+		D_bar(1, 1) = -2.688172e+00f;
+		D_bar(1, 2) = -4.545455e+00f;
+		D_bar(2, 0) = +2.688172e+00f;
+		D_bar(2, 1) = +2.688172e+00f;
+		D_bar(2, 2) = -4.545455e+00f;
+		D_bar(3, 0) = -2.688172e+00f;
+		D_bar(3, 1) = +2.688172e+00f;
+		D_bar(3, 2) = +4.545455e+00f;
 
 		// Initialize linear mass matrix
-		M_acc(0, 0) = +1.365000e-01f;
-		M_acc(1, 0) = +1.365000e-01f;
-		M_acc(2, 0) = +1.365000e-01f;
-		M_acc(3, 0) = +1.365000e-01f;
+		M_lin(0, 0) = +1.365000e-01f;
+		M_lin(1, 0) = +1.365000e-01f;
+		M_lin(2, 0) = +1.365000e-01f;
+		M_lin(3, 0) = +1.365000e-01f;
 
 		// Set init flag
 		init_complete = true;
@@ -102,9 +131,8 @@ void Controller::update()
 {
 	// Get state and commands
 	Quat q_act = Imu::get_quat();
-	Vector<3> omega = Imu::get_omega();
 	Vector<3> acc_cmd = Bluetooth::get_acc_cmd();
-	float tz_cmd = Bluetooth::get_heading_cmd();
+	float tz_cmd = Bluetooth::get_tz_cmd();
 
 	// Adjust accel for gravity
 	acc_cmd(2) += gravity;
@@ -144,25 +172,31 @@ void Controller::update()
 	// Quaternion control
 	Quat q_err = inv(q_cmd) * q_act;
 	if (q_err.w < 0.0f) q_err = -q_err;
-	Vector<3> q_err_vec;
-	q_err_vec(0) = q_err.x;
-	q_err_vec(1) = q_err.y;
-	q_err_vec(2) = q_err.z;
-	Vector<3> alp_cmd = -(gain_p * q_err_vec + gain_d * omega);
+	Vector<3> tau_cmd;
+	tau_cmd(0) = quat_x_pid.update(-q_err.x, 0.0f, quat_sat);
+	tau_cmd(1) = quat_y_pid.update(-q_err.y, 0.0f, quat_sat);
+	tau_cmd(2) = quat_z_pid.update(-q_err.z, 0.0f, quat_sat);
+	Vector<4> f_ang = D_bar * tau_cmd;
+
+	// Acceleration magnitude control
+	Vector<4> f_lin = M_lin * Vector<1>(acc_mag_cmd);
 
 	// Force regulator controller
-	Vector<4> f_alp = M_alp * alp_cmd;
-	Vector<4> f_acc = M_acc * Vector<1>(acc_mag_cmd);
 	float p_min = 1.0f;
+	quat_sat = false;
 	for (uint8_t i = 0; i < 4; i++)
 	{
 		float p =
-			(f_alp(i) > 0.0f) ? ((force_max - f_acc(i)) / f_alp(i)) :
-			(f_alp(i) < 0.0f) ? ((force_min - f_acc(i)) / f_alp(i)) :
+			(f_ang(i) > 0.0f) ? ((force_max - f_lin(i)) / f_ang(i)) :
+			(f_ang(i) < 0.0f) ? ((force_min - f_lin(i)) / f_ang(i)) :
 			1.0f;
-		if ((0.0f < p) && (p < p_min)) p_min = p;	
+		if ((0.0f < p) && (p < p_min))
+		{
+			p_min = p;
+			quat_sat = true;
+		}
 	}
-	forces = p_min * f_alp + f_acc;
+	forces = p_min * f_ang + f_lin;
 }
 
 /**

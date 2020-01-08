@@ -13,9 +13,9 @@ namespace State
 	// State enum
 	typedef enum
 	{
-		state_enabled,
-		state_disabled,
-		state_failure,
+		state_enabled = 0x00,
+		state_disabled = 0x01,
+		state_failed = 0x02,
 	}
 	state_t;
 

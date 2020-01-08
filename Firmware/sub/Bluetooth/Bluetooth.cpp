@@ -23,17 +23,17 @@ namespace Bluetooth
 
 	// Serial server
 	const uint8_t start_byte = 0xFF;
-	const uint8_t msg_id_enable = 0x00;
+	const uint8_t msg_id_state = 0x00;
 	const uint8_t msg_id_update = 0x01;
-	void msg_rx_enable(uint8_t* data);
+	void msg_rx_state(uint8_t* data);
 	void msg_rx_update(uint8_t* data);
 	void msg_tx_update(uint8_t* data);
 	SerialServer server(serial, start_byte);
 
 	// Controller commands
-	bool enable_cmd = false;
+	uint8_t state_cmd = State::state_disabled;
 	Vector<3> acc_cmd;
-	float heading_cmd = 0.0f;
+	float tz_cmd = 0.0f;
 	bool got_cmds = false;
 
 	// Init flag
@@ -51,7 +51,7 @@ void Bluetooth::init()
 		serial->begin(baud_rate);
 
 		// Configure server
-		server.add_rx(msg_id_enable, 1, msg_rx_enable);
+		server.add_rx(msg_id_state, 1, msg_rx_state);
 		server.add_rx(msg_id_update, 16, msg_rx_update);
 		server.add_tx(msg_id_update, 57, msg_tx_update);
 
@@ -73,14 +73,14 @@ bool Bluetooth::update()
 }
 
 /**
- * @brief Returns flight enable status
+ * @brief Returns state command as byte
  */
-bool Bluetooth::get_enable_cmd()
+uint8_t Bluetooth::get_state_cmd()
 {
 	#if defined(STUB_BLUETOOTH)
-		enable_cmd = true;
+		state_cmd = State::state_enabled;
 	#endif
-	return enable_cmd;
+	return state_cmd;
 }
 
 /**
@@ -99,24 +99,27 @@ const Vector<3>& Bluetooth::get_acc_cmd()
 /**
  * @brief Returns heading cmd [rad]
  */
-float Bluetooth::get_heading_cmd()
+float Bluetooth::get_tz_cmd()
 {
 	#if defined(STUB_BLUETOOTH)
 		heading_cmd = 0.0f;
 	#endif
-	return heading_cmd;
+	return tz_cmd;
 }
 
 /**
- * @brief Gets UAV enable command
+ * @brief Gets UAV state command
  * @param data Data pointer
  * 
  * Data format:
- * [00-00] = Enable cmd (0x01 = Enabled, 0x00 = Disabled)
+ * [00-00] = State cmd
+ *     0x00 = Enabled
+ *     0x01 = Disabled
+ *     0x02 = Failure
  */
-void Bluetooth::msg_rx_enable(uint8_t* data)
+void Bluetooth::msg_rx_state(uint8_t* data)
 {
-	enable_cmd = (data[0] == 0x01) ? true : false;
+	state_cmd = data[0];
 }
 
 /**
@@ -137,7 +140,7 @@ void Bluetooth::msg_rx_update(uint8_t* data)
 	str >> acc_cmd(0);
 	str >> acc_cmd(1);
 	str >> acc_cmd(2);
-	str >> heading_cmd;
+	str >> tz_cmd;
 	Platform::enable_interrupts();
 
 	// Transmit state response
@@ -180,20 +183,11 @@ void Bluetooth::msg_tx_update(uint8_t* data)
 	state_t state = State::get();
 	Platform::enable_interrupts();
 
-	// Pack numerical data
+	// Pack data
 	Struct str(data);
 	for (uint8_t i = 0; i < 4; i++) str << quat(i);
 	for (uint8_t i = 0; i < 3; i++) str << omega(i);
 	for (uint8_t i = 0; i < 3; i++) str << accel(i);
 	for (uint8_t i = 0; i < 4; i++) str << forces(i);
-
-	// Pack state enum
-	uint8_t state_byte;
-	switch (state)
-	{
-		case State::state_enabled: state_byte = 0x00; break;
-		case State::state_disabled: state_byte = 0x01; break;
-		case State::state_failure: state_byte = 0x02; break;
-	}
-	str << state_byte;
+	str << (uint8_t)state;
 }
