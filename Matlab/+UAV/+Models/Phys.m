@@ -89,5 +89,17 @@ classdef Phys < handle
             D_bar = inv(D_mat);
             obj.D_bar_ang = D_bar(:, 1:3);
         end
+        
+        function print_cpp(obj)
+            %PRINT_CPP(obj) Prints C++ code for constants
+            clc
+            fprintf('\n// Physical Constants\n');
+            fprintf('const float I_xx = %.2ef;\t// Inertia x-axis [kg*m^2]\n', obj.I_xx);
+            fprintf('const float I_yy = %.2ef;\t// Inertia y-axis [kg*m^2]\n', obj.I_yy);
+            fprintf('const float I_zz = %.2ef;\t// Inertia z-axis [kg*m^2]\n', obj.I_zz);
+            fprintf('const float mass = %.3ff;\t\t// Total mass [kg]\n', obj.mass);
+            fprintf('const float gravity = %.3ff;\t// Gravity [m/s^2]\n', obj.g_sca);
+            fprintf('\n');
+        end
     end
 end
