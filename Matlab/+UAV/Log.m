@@ -5,10 +5,10 @@ classdef Log < handle
     properties (Access = protected, Constant)
         axis_names = {'x', 'y', 'z'};
         prop_names = {'++', '+-', '-+', '--'};
+        quat_axes = {'w', 'x', 'y', 'z'};
     end
     
     properties (SetAccess = protected)
-        phys_model; % UAV physical model [
         t;          % Timesteps [s]
         ang_pos;    % Orientations [Quat]
         ang_vel;    % Local angular velocities [rad/s]
@@ -83,6 +83,17 @@ classdef Log < handle
             plot(obj.t, obj.tz, 'b-')
             ylim([-pi, +pi])
             legend('Setpt', 'Value')
+            
+            % Angular position
+            figure;
+            for i = 1:4
+                subplot(2, 2, i)
+                hold on, grid on
+                title(['Quat-' obj.quat_axes{i}])
+                xlabel('Time [s]')
+                ylabel('Quat')
+                plot(obj.t, obj.ang_pos(i, :), 'b-')
+            end
             
             % Angular velocity
             figure;
