@@ -1,11 +1,13 @@
 classdef Log < handle
-    %LOG Class for logging data from UAV runs
+    %LOG Class for logging data from UAV flight runs
     %   Author: Dan Oates (WPI Class of 2020)
     
     properties (Access = protected, Constant)
         axis_names = {'x', 'y', 'z'};
         prop_names = {'++', '+-', '-+', '--'};
         quat_axes = {'w', 'x', 'y', 'z'};
+        log_path = 'Logs/';
+        log_time_fmt = 'MM-dd-HH-mm';
     end
     
     properties (SetAccess = protected)
@@ -22,19 +24,26 @@ classdef Log < handle
     end
     
     methods
-        function obj = Log()
-            %obj = LOG() Create empty UAV log
-            n = 1000;
-            obj.t = zeros(1, n);
-            obj.ang_pos = zeros(4, n);
-            obj.ang_vel = zeros(3, n);
-            obj.lin_acc = zeros(3, n);
-            obj.f_prop = zeros(4, n);
-            obj.tz = zeros(1, n);
-            obj.acc_cmd = zeros(3, n);
-            obj.tz_cmd = zeros(1, n);
-            obj.n = 0;
-            obj.trimmed = false;
+        function obj = Log(file_name)
+            %LOG Create UAV flight log
+            %   obj = LOG() Create empty UAV log
+            %   obj = LOG(file_name) Load log from file
+            if nargin < 1
+                n = 1000;
+                obj.t = zeros(1, n);
+                obj.ang_pos = zeros(4, n);
+                obj.ang_vel = zeros(3, n);
+                obj.lin_acc = zeros(3, n);
+                obj.f_prop = zeros(4, n);
+                obj.tz = zeros(1, n);
+                obj.acc_cmd = zeros(3, n);
+                obj.tz_cmd = zeros(1, n);
+                obj.n = 0;
+                obj.trimmed = false;
+            else
+                str = load([obj.log_path, file_name]);
+                obj = str.obj;
+            end
         end
        
         function update(obj, state, cmd, t)
@@ -120,6 +129,20 @@ classdef Log < handle
                 plot(obj.t, obj.f_prop(i, :), 'r-')
                 ylim([f_min, f_max])
             end
+        end
+        
+        function file_name = save(obj)
+            %file_name = SAVE(obj) Saves log to mat file
+            %   Outputs:
+            %       file_name = Log file name [char]
+            
+            % Generate file name
+            time = datetime(now, 'ConvertFrom', 'datenum');
+            time.Format = obj.log_time_fmt;
+            file_name = ['Log-', char(time), '.mat'];
+            
+            % Save self to file
+            save([obj.log_path, file_name], 'obj');
         end
     end
     
