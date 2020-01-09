@@ -19,7 +19,6 @@ if run_gui, gui = UAV.Gui(); end
 log = UAV.Log();
 
 % Command loop
-first_loop = true;
 while true
     
     % Loop routines
@@ -29,19 +28,14 @@ while true
     log.update(state, cmd, t);
     drawnow
     
-    % Xbox init override
-    if first_loop && isa(cmd_src, 'UAV.CmdSrcs.Xbox')
-        cmd_src.set_tz(state.get_tz());
-        first_loop = false;
-    end
-    
     % Exit condition
     if cmd_src.get_stop()
         break
     end
 end
 
-% Plot log
+% Save and plot log
+log.save();
 log.plot();
 
 end

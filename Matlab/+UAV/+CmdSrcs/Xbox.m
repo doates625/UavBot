@@ -56,8 +56,14 @@ classdef Xbox < UAV.CmdSrcs.CmdSrc
             acc = Quat([0; 0; 1], tz).rotate(acc);
             
             % Parse state command
-            if obj.xbox.btn('Start'), obj.state = 'Enabled'; end
-            if obj.xbox.btn('Back'), obj.state = 'Disabled'; end
+            if obj.xbox.btn('B')
+                obj.state = 'Disabled';
+            elseif obj.xbox.btn('Start')
+                if ~strcmp(obj.state, 'Enabled')
+                    obj.tz_int.set(0);
+                end
+                obj.state = 'Enabled';
+            end
             
             % Form command
             cmd = UAV.Cmd(acc, tz, obj.state);
@@ -74,12 +80,7 @@ classdef Xbox < UAV.CmdSrcs.CmdSrc
         
         function stop = get_stop(obj)
             %stop = GET_STOP(obj) Get stop flag [logical]
-            stop = obj.xbox.btn('B');
-        end
-        
-        function set_tz(obj, tz)
-            %SET_TZ(obj, tz) Overrides heading cmd [rad]
-            obj.tz_int.set(tz);
+            stop = obj.xbox.btn('Back');
         end
     end
 end

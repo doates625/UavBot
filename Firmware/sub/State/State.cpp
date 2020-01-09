@@ -39,6 +39,7 @@ void State::update()
 			state = (state_t)Bluetooth::get_state_cmd();
 			if (state == state_enabled)
 			{
+				Imu::calibrate();
 				Controller::reset();
 			}
 			break;

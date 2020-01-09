@@ -27,6 +27,9 @@ namespace Imu
 	// BNO055 IMU
 	const BNO055::axis_config_t axis_config = BNO055::NWU;
 	BNO055 bno055(wire, axis_config);
+
+	// Quat calibration offset
+	Quat quat_cal;
 #endif
 
 	// IMU readings
@@ -72,6 +75,16 @@ bool Imu::init()
 }
 
 /**
+ * @brief Calibrates orientation to unity
+ */
+void Imu::calibrate()
+{
+	quat_cal = Quat();
+	update();
+	quat_cal = inv(quat);
+}
+
+/**
  * @brief Updates IMU readings
  */
 void Imu::update()
@@ -92,6 +105,7 @@ void Imu::update()
 	quat.x = bno055.get_qua_x();
 	quat.y = bno055.get_qua_y();
 	quat.z = bno055.get_qua_z();
+	quat = quat_cal * quat;
 	
 	// Update omega
 	bno055.update_gyr();

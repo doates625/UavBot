@@ -13,6 +13,7 @@
 namespace Imu
 {
 	bool init();
+	void calibrate();
 	void update();
 	const Quat& get_quat();
 	const Vector<3>& get_omega();
