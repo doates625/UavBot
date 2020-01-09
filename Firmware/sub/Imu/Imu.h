@@ -15,8 +15,8 @@ namespace Imu
 	bool init();
 	void calibrate();
 	void update();
-	const Quat& get_quat();
-	const Vector<3>& get_omega();
-	const Vector<3>& get_accel();
+	const Quat& get_ang_pos();
+	const Vector<3>& get_ang_vel();
+	const Vector<3>& get_lin_acc();
 	bool is_flipped();
 }

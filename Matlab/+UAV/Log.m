@@ -11,12 +11,12 @@ classdef Log < handle
         file_name;          % File name [char]
         log_time;           % Time log [s]
         log_ang_pos;        % Orientation log [w; x; y; z]
-        log_ang_vel;        % Angular velocity log [rad/s]
-        log_lin_acc;    	% Linear acceleration log [m/s^2]
-        log_lin_acc_cmd;    % Linear acceleration cmd log [m/s^2]
+        log_ang_vel;        % Local angular velocity log [rad/s]
+        log_lin_acc;    	% Global linear acceleration log [m/s^2]
+        log_lin_acc_cmd;    % Global linear acceleration cmd log [m/s^2]
         log_ang_z;          % Heading log [rad]
         log_ang_z_cmd;      % Heading cmd log [rad]
-        log_f_props;        % Propeller force log [++; +-; -+; --] [N]
+        log_f_props;        % Propeller forces log [N]
         log_length;         % Log length [cnts]
         trimmed;            % Trimmed flag [logical]
         comments;           % Comments [cell[char]
@@ -59,18 +59,18 @@ classdef Log < handle
         function update(obj, state, cmd, time)
             %UPDATE(obj, state, cmd, time) Add new data to log
             %   Inputs:
-            %       state = UAV state [UAV.State]
-            %       cmd = UAV command [UAV.Cmd]
+            %       state = UAV state [UAV.State.State]
+            %       cmd = UAV command [UAV.State.Cmd]
             %       time = Time [s]
             n = obj.log_length + 1;
             obj.log_time(:, n) = time;
             obj.log_ang_pos(:, n) = state.ang_pos.vector();
             obj.log_ang_vel(:, n) = state.ang_vel;
             obj.log_lin_acc(:, n) = state.lin_acc;
-            obj.log_lin_acc_cmd(:, n) = cmd.acc;
-            obj.log_ang_z(:, n) = state.get_tz();
-            obj.log_ang_z_cmd(:, n) = cmd.tz;
-            obj.log_f_props(:, n) = state.f_prop;
+            obj.log_lin_acc_cmd(:, n) = cmd.lin_acc;
+            obj.log_ang_z(:, n) = state.ang_z;
+            obj.log_ang_z_cmd(:, n) = cmd.ang_z;
+            obj.log_f_props(:, n) = state.f_props;
             obj.log_length = n;
         end
         

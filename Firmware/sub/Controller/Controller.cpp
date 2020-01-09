@@ -5,11 +5,11 @@
 #include "Controller.h"
 #include <Imu.h>
 #include <Bluetooth.h>
-#include <Motors.h>
+#include <Props.h>
 #include <CppUtil.h>
 #include <PID.h>
-using Motors::f_prop_min;
-using Motors::f_prop_max;
+using Props::f_prop_min;
+using Props::f_prop_max;
 using CppUtil::clamp;
 using CppUtil::sqa;
 
@@ -27,14 +27,12 @@ namespace Controller
 
 	// Control Constants
 	const float f_ctrl = 50.0f;		// Control freq [Hz]
-	const float s_qx = -3.0f;		// Quat x-axis pole [s^-1]
-	const float s_qy = -3.0f;		// Quat y-axis pole [s^-1]
+	const float s_qx = -5.0f;		// Quat x-axis pole [s^-1]
+	const float s_qy = -5.0f;		// Quat y-axis pole [s^-1]
 	const float s_qz = -3.0f;		// Quat z-axis pole [s^-1]
-	const float s_az = -1.0f;		// Accel z-axis pole [s^-1]
+	const float s_az = -4.0f;		// Accel z-axis pole [s^-1]
 	const float fr_min = 0.1f;		// Min prop thrust ratio [N/N]
 	const float fr_max = 0.9f;		// Max prop thrust ratio [N/N]
-	const float tau_min = -1e10f;	// PID torque min [N*m]
-	const float tau_max = +1e10f;	// PID torque max [N*m]
 
 	// Derived constants
 	const float t_ctrl_s = 1.0f / f_ctrl;
@@ -75,7 +73,7 @@ namespace Controller
 	Vector<3> y_hat;
 	Vector<3> z_hat;
 	Matrix<4, 3> D_bar;
-	Vector<4> forces;
+	Vector<4> f_props;
 
 	// Quaternion PID saturation flag
 	bool quat_sat = false;
@@ -131,34 +129,34 @@ void Controller::init()
 void Controller::update()
 {
 	// Get state and commands
-	Quat q_act = Imu::get_quat();
-	Vector<3> acc_loc = Imu::get_accel();
-	Vector<3> acc_cmd = Bluetooth::get_acc_cmd();
-	float tz_cmd = Bluetooth::get_tz_cmd();
+	Quat ang_pos = Imu::get_ang_pos();
+	Vector<3> lin_acc = Imu::get_lin_acc();
+	Vector<3> lin_acc_cmd = Bluetooth::get_lin_acc_cmd();
+	float ang_z_cmd = Bluetooth::get_ang_z_cmd();
 
 	// Adjust accel for gravity
-	acc_cmd(2) += gravity;
+	lin_acc_cmd(2) += gravity;
 	
 	// Accel command limiting
-	acc_cmd(2) = clamp(acc_cmd(2), acc_mag_min, acc_mag_max);
-	float norm_xy = hypot(acc_cmd(0), acc_cmd(1));
-	float norm_xy_max = sqrtf(acc_mag_max_sq - sqa(acc_cmd(2)));
+	lin_acc_cmd(2) = clamp(lin_acc_cmd(2), acc_mag_min, acc_mag_max);
+	float norm_xy = hypot(lin_acc_cmd(0), lin_acc_cmd(1));
+	float norm_xy_max = sqrtf(acc_mag_max_sq - sqa(lin_acc_cmd(2)));
 	float p = norm_xy_max / norm_xy;
 	if (p < 1.0f)
 	{
-		acc_cmd(0) *= p;
-		acc_cmd(1) *= p;
+		lin_acc_cmd(0) *= p;
+		lin_acc_cmd(1) *= p;
 	}
 
 	// Orientation cmd
-	Quat q_z(z_hat, tz_cmd);
+	Quat q_z(z_hat, ang_z_cmd);
 	Quat q_cmd = q_z;
-	float norm_acc = norm(acc_cmd);
+	float norm_acc = norm(lin_acc_cmd);
 	if (norm_acc > 0)
 	{
-		Vector<3> acc_hat = acc_cmd / norm_acc;
-		float cos_z = cos(tz_cmd);
-		float sin_z = sin(tz_cmd);
+		Vector<3> acc_hat = lin_acc_cmd / norm_acc;
+		float cos_z = cos(ang_z_cmd);
+		float sin_z = sin(ang_z_cmd);
 		float t_x = asinf(sin_z*acc_hat(0) - cos_z*acc_hat(1));
 		float t_y = asinf((cos_z*acc_hat(0) + sin_z*acc_hat(1)) / cosf(t_x));
 		Quat q_y(y_hat, t_y);
@@ -167,21 +165,21 @@ void Controller::update()
 	}
 
 	// Quaternion control
-	Quat q_err = inv(q_cmd) * q_act;
-	if (q_err.w < 0.0f) q_err = -q_err;
+	Quat ang_err = inv(q_cmd) * ang_pos;
+	if (ang_err.w < 0.0f) ang_err = -ang_err;
 	Vector<3> tau_cmd;
-	tau_cmd(0) = quat_x_pid.update(-q_err.x, 0.0f, quat_sat);
-	tau_cmd(1) = quat_y_pid.update(-q_err.y, 0.0f, quat_sat);
-	tau_cmd(2) = quat_z_pid.update(-q_err.z, 0.0f, quat_sat);
+	tau_cmd(0) = quat_x_pid.update(-ang_err.x, 0.0f, quat_sat);
+	tau_cmd(1) = quat_y_pid.update(-ang_err.y, 0.0f, quat_sat);
+	tau_cmd(2) = quat_z_pid.update(-ang_err.z, 0.0f, quat_sat);
 	Vector<4> f_ang = D_bar * tau_cmd;
 
 	// Acceleration z-axis cmd
-	acc_cmd(2) -= gravity;
-	Vector<3> acc_cmd_loc = inv(q_act) * acc_cmd;
+	lin_acc_cmd(2) -= gravity;
+	Vector<3> acc_cmd_loc = inv(ang_pos) * lin_acc_cmd;
 	float acc_z_cmd = acc_cmd_loc(2);
 
 	// Acceleration z-axis control
-	float f_lin_sca = acc_z_pid.update(acc_z_cmd - acc_loc(2));
+	float f_lin_sca = acc_z_pid.update(acc_z_cmd - lin_acc(2));
 	Vector<4> f_lin;
 	for (uint8_t i = 0; i < 4; i++)
 	{
@@ -203,7 +201,7 @@ void Controller::update()
 			quat_sat = true;
 		}
 	}
-	forces = p_min * f_ang + f_lin;
+	f_props = p_min * f_ang + f_lin;
 }
 
 /**
@@ -216,13 +214,13 @@ void Controller::reset()
 	quat_z_pid.reset();
 	acc_z_pid.reset();
 	quat_sat = false;
-	forces = Vector<4>();
+	f_props = Vector<4>();
 }
 
 /**
  * @brief Returns prop forces [N]
  */
-const Vector<4>& Controller::get_forces()
+const Vector<4>& Controller::get_f_props()
 {
-	return forces;
+	return f_props;
 }

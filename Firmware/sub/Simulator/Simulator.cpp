@@ -24,10 +24,10 @@ namespace Simulator
 	bool got_rx = false;
 
 	// State copies
-	Quat quat; 			// Orientation [Quat]
-	Vector<3> omega;	// Angular velocity [rad/s]
-	Vector<3> accel;	// Local accel [m/s^2]
-	Vector<4> forces;	// Propeller forces [N]
+	Quat ang_pos; 		// Orientation [Quat]
+	Vector<3> ang_vel;	// Angular velocity [rad/s]
+	Vector<3> lin_acc;	// Linear accel [m/s^2]
+	Vector<4> f_props;	// Propeller forces [N]
 
 	// Init flag
 	bool init_complete = false;
@@ -67,51 +67,39 @@ void Simulator::update()
 /**
  * @brief Returns orientation [Quat]
  */
-const Quat& Simulator::get_quat()
+const Quat& Simulator::get_ang_pos()
 {
-	return quat;
+	return ang_pos;
 }
 
 /**
  * @brief Returns angular velocity [rad/s]
  */
-const Vector<3>& Simulator::get_omega()
+const Vector<3>& Simulator::get_ang_vel()
 {
-	return omega;
+	return ang_vel;
 }
 
 /**
- * @brief Returns local acceleration [m/s^2]
+ * @brief Returns local linear acceleration [m/s^2]
  */
-const Vector<3>& Simulator::get_accel()
+const Vector<3>& Simulator::get_lin_acc()
 {
-	return accel;
+	return lin_acc;
 }
 
 /**
- * @brief Sends motor forces to simulator
+ * @brief Sends propeller forces to simulator
  */
-void Simulator::set_forces(const Vector<4>& forces_)
+void Simulator::set_f_props(const Vector<4>& f_props_)
 {
-	forces = forces_;
+	f_props = f_props_;
 	server.tx(msg_id_update);
 }
 
 /**
  * @brief Unpacks IMU data from simulator
  * @param data Data pointer
- * 
- * Data format:
- * [00-03] Quat-w [float]
- * [04-07] Quat-x [float]
- * [08-11] Quat-y [float]
- * [12-15] Quat-z [float]
- * [16-19] Omega-x [float, rad/s]
- * [20-23] Omega-y [float, rad/s]
- * [24-27] Omega-z [float, rad/s]
- * [28-31] Local accel-x [float, m/s^2]
- * [32-35] Local accel-y [float, m/s^2]
- * [36-39] Local accel-z [float, m/s^2]
  */
 void Simulator::msg_rx_update(uint8_t* data)
 {
@@ -119,9 +107,9 @@ void Simulator::msg_rx_update(uint8_t* data)
 	Struct str(data);
 
 	// Unpack simulated IMU readings
-	str >> quat.w >> quat.x >> quat.y >> quat.z;
-	for (uint8_t i = 0; i < 3; i++) str >> omega(i);
-	for (uint8_t i = 0; i < 3; i++) str >> accel(i);
+	str >> ang_pos.w >> ang_pos.x >> ang_pos.y >> ang_pos.z;
+	for (uint8_t i = 0; i < 3; i++) str >> ang_vel(i);
+	for (uint8_t i = 0; i < 3; i++) str >> lin_acc(i);
 
 	// Set rx flag
 	got_rx = true;
@@ -130,18 +118,12 @@ void Simulator::msg_rx_update(uint8_t* data)
 /**
  * @brief Packs force data for simulator
  * @param data Data pointer
- * 
- * Data format:
- * [00-03] Force++ [float, N]
- * [04-07] Force+- [float, N]
- * [08-11] Force-+ [float, N]
- * [12-15] Force-- [float, N]
  */
 void Simulator::msg_tx_update(uint8_t* data)
 {
 	Struct str(data);
 	for (uint8_t i = 0; i < 4; i++)
 	{
-		str << forces(i);
+		str << f_props(i);
 	}
 }

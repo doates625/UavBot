@@ -29,13 +29,13 @@ namespace Imu
 	BNO055 bno055(wire, axis_config);
 
 	// Quat calibration offset
-	Quat quat_cal;
+	Quat ang_pos_cal;
 #endif
 
 	// IMU readings
-	Quat quat; 			// Orientation [Quat]
-	Vector<3> omega;	// Angular velocity [rad/s]
-	Vector<3> accel;	// Acceleration (with gravity) [m/s^2]
+	Quat ang_pos; 		// Angular position [Quat]
+	Vector<3> ang_vel;	// Angular velocity [rad/s]
+	Vector<3> lin_acc;	// Local linear acceleration [m/s^2]
 	
 	// Init flag
 	bool init_complete = false;
@@ -79,9 +79,11 @@ bool Imu::init()
  */
 void Imu::calibrate()
 {
-	quat_cal = Quat();
+#if !defined(SIMULATE_PLANT)
+	ang_pos_cal = Quat();
 	update();
-	quat_cal = inv(quat);
+	ang_pos_cal = inv(ang_pos);
+#endif
 }
 
 /**
@@ -93,31 +95,31 @@ void Imu::update()
 
 	// Get readings from simulator
 	Simulator::update();
-	quat = Simulator::get_quat();
-	omega = Simulator::get_omega();
-	accel = Simulator::get_accel();
+	ang_pos = Simulator::get_ang_pos();
+	ang_vel = Simulator::get_ang_vel();
+	lin_acc = Simulator::get_lin_acc();
 
 #elif !defined(STUB_IMU)
 
 	// Update quat
 	bno055.update_qua();
-	quat.w = bno055.get_qua_w();
-	quat.x = bno055.get_qua_x();
-	quat.y = bno055.get_qua_y();
-	quat.z = bno055.get_qua_z();
-	quat = quat_cal * quat;
+	ang_pos.w = bno055.get_qua_w();
+	ang_pos.x = bno055.get_qua_x();
+	ang_pos.y = bno055.get_qua_y();
+	ang_pos.z = bno055.get_qua_z();
+	ang_pos = ang_pos_cal * ang_pos;
 	
 	// Update omega
 	bno055.update_gyr();
-	omega(0) = bno055.get_gyr_x();
-	omega(1) = bno055.get_gyr_y();
-	omega(2) = bno055.get_gyr_z();
+	ang_vel(0) = bno055.get_gyr_x();
+	ang_vel(1) = bno055.get_gyr_y();
+	ang_vel(2) = bno055.get_gyr_z();
 	
 	// Update accel
 	bno055.update_lia();
-	accel(0) = bno055.get_lia_x();
-	accel(1) = bno055.get_lia_y();
-	accel(2) = bno055.get_lia_z();
+	lin_acc(0) = bno055.get_lia_x();
+	lin_acc(1) = bno055.get_lia_y();
+	lin_acc(2) = bno055.get_lia_z();
 	
 #endif
 }
@@ -125,25 +127,25 @@ void Imu::update()
 /**
  * @brief Returns orientation [Quat]
  */
-const Quat& Imu::get_quat()
+const Quat& Imu::get_ang_pos()
 {
-	return quat;
+	return ang_pos;
 }
 
 /**
  * @brief Returns angular velocity [rad/s]
  */
-const Vector<3>& Imu::get_omega()
+const Vector<3>& Imu::get_ang_vel()
 {
-	return omega;
+	return ang_vel;
 }
 
 /**
- * @brief Returns acceleration [m/s^2]
+ * @brief Returns local linear acceleration [m/s^2]
  */
-const Vector<3>& Imu::get_accel()
+const Vector<3>& Imu::get_lin_acc()
 {
-	return accel;
+	return lin_acc;
 }
 
 /**
@@ -151,5 +153,5 @@ const Vector<3>& Imu::get_accel()
  */
 bool Imu::is_flipped()
 {
-	return (sqa(quat.x) + sqa(quat.y)) > 0.5f;
+	return (sqa(ang_pos.x) + sqa(ang_pos.y)) > 0.5f;
 }

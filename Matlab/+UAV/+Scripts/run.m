@@ -1,15 +1,17 @@
-function log = run(uav, cmd_src, run_gui)
-%log = RUN(uav, cmd_src) Run UAV interface
+function log = run(uav, cmd_src, run_gui, save_log)
+%log = RUN(uav, cmd_src, run_gui, save_log) Run UAV interface
 %   Inputs:
 %       uav = UAV interface [UAV.Interfaces.Interface]
 %       cmd_src = Command source [UAV.CmdSrcs.CmdSrc]
 %       run_gui = Flag to run GUI [logical]
+%       save_log = Flag to save log file [logical]
 %   Outputs:
 %       log = Flight log object [UAV.Log]
 %   Author: Dan Oates (WPI Class of 2020)
 close, clc
 
 % Default args
+if nargin < 4, save_log = false; end
 if nargin < 3, run_gui = true; end
 if nargin < 2, cmd_src = UAV.CmdSrcs.Xbox(); end
 if nargin < 1, uav = UAV.Interfaces.Sims.Matlab(); end
@@ -22,10 +24,10 @@ log = UAV.Log();
 while true
     
     % Loop routines
-    [cmd, t] = cmd_src.get_cmd();
+    [cmd, time] = cmd_src.get_cmd();
     state = uav.update(cmd);
-    if run_gui, gui.update(state, cmd, t); end
-    log.update(state, cmd, t);
+    if run_gui, gui.update(state, cmd, time); end
+    log.update(state, cmd, time);
     drawnow
     
     % Exit condition
@@ -36,7 +38,7 @@ end
 
 % Log processing
 log.trim();
-log.save();
+if save_log, log.save(); end
 log.plot();
 
 end

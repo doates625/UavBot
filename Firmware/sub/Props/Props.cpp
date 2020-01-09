@@ -1,8 +1,8 @@
 /**
- * @file Motors.cpp
+ * @file Props.cpp
  * @author Dan Oates (WPI Class of 2020)
  */
-#include "Motors.h"
+#include "Props.h"
 #if defined(SIMULATE_PLANT)
 	#include <Simulator.h>
 #endif
@@ -14,41 +14,41 @@ using CppUtil::clamp;
 /**
  * Namespace Definitions
  */
-namespace Motors
+namespace Props
 {
 	// Constants
 	const float f_prop_min = 0.00f;
 	const float f_prop_max = 2.46f;
 
-	// ESC Servos
-	const uint8_t motor_pins[4] = { 22, 3, 23, 2 };
-	ServoOut motors[4] = 
+	// ESC Interfaces
+	const uint8_t ecs_pins[4] = { 22, 3, 23, 2 };
+	ServoOut escs[4] = 
 	{
-		ServoOut(motor_pins[0], f_prop_min, f_prop_max),	// M++
-		ServoOut(motor_pins[1], f_prop_min, f_prop_max),	// M+-
-		ServoOut(motor_pins[2], f_prop_min, f_prop_max),	// M-+
-		ServoOut(motor_pins[3], f_prop_min, f_prop_max),	// M--
+		ServoOut(ecs_pins[0], f_prop_min, f_prop_max),	// M++
+		ServoOut(ecs_pins[1], f_prop_min, f_prop_max),	// M+-
+		ServoOut(ecs_pins[2], f_prop_min, f_prop_max),	// M-+
+		ServoOut(ecs_pins[3], f_prop_min, f_prop_max),	// M--
 	};
 
 	// Forces Vector
-	Vector<4> forces;
+	Vector<4> f_props;
 
 	// Init Flag
 	bool init_complete = false;
 }
 
 /**
- * @brief Inits motor controllers
+ * @brief Inits prop motor controllers
  */
-void Motors::init()
+void Props::init()
 {
 	if (!init_complete)
 	{
 		// Enable ESCs
 		for (uint8_t i = 0; i < 4; i++)
 		{
-			motors[i].set_cmd(f_prop_min);
-			motors[i].set_enabled(true);
+			escs[i].set_cmd(f_prop_min);
+			escs[i].set_enabled(true);
 		}
 		Platform::wait(3.0f);
 
@@ -65,31 +65,25 @@ void Motors::init()
 /**
  * @brief Sets motor forces
  * @param forces_ Motor forces vector [N]
- * 
- * Mapping:
- * - forces(0) = M++
- * - forces(1) = M+-
- * - forces(2) = M-+
- * - forces(3) = M--
  */
-void Motors::set_forces(const Vector<4>& forces_)
+void Props::set_f_props(const Vector<4>& f_props_)
 {
 	for (uint8_t i = 0; i < 4; i++)
 	{
-		forces(i) = clamp(forces_.get(i), f_prop_min, f_prop_max);
+		f_props(i) = clamp(f_props_.get(i), f_prop_min, f_prop_max);
 		#if !defined(SIMULATE_PLANT)
-			motors[i].set_cmd(forces(i));
+			escs[i].set_cmd(f_props(i));
 		#endif
 	}
 	#if defined(SIMULATE_PLANT)
-		Simulator::set_forces(forces);
+		Simulator::set_f_props(f_props);
 	#endif
 }
 
 /**
  * @brief Returns motor forces vector
  */
-const Vector<4>& Motors::get_forces()
+const Vector<4>& Props::get_f_props()
 {
-	return forces;
+	return f_props;
 }

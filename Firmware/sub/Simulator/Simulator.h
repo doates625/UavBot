@@ -14,8 +14,8 @@ namespace Simulator
 {
 	void init();
 	void update();
-	const Quat& get_quat();
-	const Vector<3>& get_omega();
-	const Vector<3>& get_accel();
-	void set_forces(const Vector<4>& forces);
+	const Quat& get_ang_pos();
+	const Vector<3>& get_ang_vel();
+	const Vector<3>& get_lin_acc();
+	void set_f_props(const Vector<4>& f_props);
 }

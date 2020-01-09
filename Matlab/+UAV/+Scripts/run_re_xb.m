@@ -9,6 +9,7 @@ instrreset
 uav = UAV.Interfaces.Remote();
 cmd_src = UAV.CmdSrcs.Xbox();
 run_gui = true;
-log = UAV.Scripts.run(uav, cmd_src, run_gui);
+save_log = true;
+log = UAV.Scripts.run(uav, cmd_src, run_gui, save_log);
 
 end

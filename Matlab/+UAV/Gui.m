@@ -12,18 +12,13 @@ classdef Gui < handle
     end
     
     methods
-        function obj = Gui(fig)
-            %obj = GUI(fig) Create UAV GUI on given figure handle [Figure]
-            %   If no handle is given, a new figure is created.
-            
-            % Get figure
-            if nargin < 1, fig = figure; end
-            obj.fig = fig;
+        function obj = Gui()
+            %obj = GUI() Create UAV GUI in new figure.
             
             % Format figure
-            figure(fig)
-            fig.Units = 'normalized';
-            fig.Position = [0.5005, 0.0380, 0.4990, 0.8833];
+            obj.fig = figure;
+            obj.fig.Units = 'normalized';
+            obj.fig.Position = [0.5005, 0.0380, 0.4990, 0.8833];
             clf, hold on, grid on
             title('UAV Pose')
             xlabel('x')
@@ -41,7 +36,7 @@ classdef Gui < handle
             obj.plot_ang_vel.update(zeros(3, 1));
             
             % Make figure legend
-            legend('x-hat', 'y-hat', 'z-hat', 'omega')
+            legend('x-hat', 'y-hat', 'z-hat', 'ang-vel')
             
             % Frame rate tracking
             obj.frame_cnt = 0;
@@ -52,8 +47,8 @@ classdef Gui < handle
         function update(obj, state, cmd, t)
             %UPDATE(obj, state, cmd, t) Update GUI with new state
             %   Inputs:
-            %       state = UAV state [UAV.State]
-            %       cmd = UAV command [UAV.Cmd]
+            %       state = UAV state [UAV.State.State]
+            %       cmd = UAV command [UAV.State,Cmd]
             %       t = Time [s]
             
             % Start timing on first frame
@@ -64,17 +59,21 @@ classdef Gui < handle
             % Update console
             clc
             fprintf('UAV GUI\n')
-            fprintf('State: %s\n', state.state)
+            fprintf('State: %s\n', char(state.enum))
             fprintf('\nControls\n')
-            fprintf('Accel-x [m/s^2]: Cmd = %+.2f, Act = %+.2f\n', cmd.acc(1), state.lin_acc(1));
-            fprintf('Accel-y [m/s^2]: Cmd = %+.2f, Act = %+.2f\n', cmd.acc(2), state.lin_acc(2));
-            fprintf('Accel-z [m/s^2]: Cmd = %+.2f, Act = %+.2f\n', cmd.acc(3), state.lin_acc(3));
-            fprintf('Theta-z [rad/s]: Cmd = %+.2f, Act = %+.2f\n', cmd.tz, state.get_tz());
-            fprintf('\nForces [N]:\n')
-            fprintf('F++ = %.2f\n', state.f_prop(1));
-            fprintf('F+- = %.2f\n', state.f_prop(2));
-            fprintf('F-+ = %.2f\n', state.f_prop(3));
-            fprintf('F-- = %.2f\n', state.f_prop(4));
+            fprintf('Accel-x [m/s^2]: Cmd = %+.2f, Act = %+.2f\n', ...
+                cmd.lin_acc(1), state.lin_acc(1));
+            fprintf('Accel-y [m/s^2]: Cmd = %+.2f, Act = %+.2f\n', ...
+                cmd.lin_acc(2), state.lin_acc(2));
+            fprintf('Accel-z [m/s^2]: Cmd = %+.2f, Act = %+.2f\n', ...
+                cmd.lin_acc(3), state.lin_acc(3));
+            fprintf('Theta-z [rad/s]: Cmd = %+.2f, Act = %+.2f\n', ...
+                cmd.ang_z, state.ang_z);
+            fprintf('\nProp Forces [N]:\n')
+            fprintf('F++ = %.2f\n', state.f_props(1));
+            fprintf('F+- = %.2f\n', state.f_props(2));
+            fprintf('F-+ = %.2f\n', state.f_props(3));
+            fprintf('F-- = %.2f\n', state.f_props(4));
             fprintf('\nFramerate:\n%.1f\n\n', obj.frame_rate)
             
             % Update plots

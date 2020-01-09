@@ -57,14 +57,14 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             %state = UPDATE(obj, cmd)
             %   Send commands and get new state
             %   Inputs:
-            %       cmd = UAV command [UAV.Cmd]
+            %       cmd = UAV command [UAV.State.Cmd]
             %   Outputs:
-            %       state = UAV state [UAV.State]
+            %       state = UAV state [UAV.State.State]
             
             % Simulate controller
-            if strcmp(cmd.state, 'Enabled')
-                [q_cmd, acc_z_cmd] = obj.lap(cmd.acc, cmd.tz);
-                f_ang = obj.qoc(q_cmd);
+            if cmd.enum == UAV.State.Enum.Enabled
+                [quat_cmd, acc_z_cmd] = obj.lap(cmd.lin_acc, cmd.ang_z);
+                f_ang = obj.qoc(quat_cmd);
                 f_lin = obj.lac(acc_z_cmd);
                 f_prop = obj.frc(f_ang, f_lin);
             else
@@ -72,23 +72,23 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             end
             
             % Simulate dynamics
-            state = obj.update_sim(f_prop, cmd.state);
+            state = obj.update_sim(f_prop, cmd.enum);
         end
     end
     
     methods (Access = protected)
-        function [q_cmd, acc_z_cmd] = lap(obj, acc_cmd, tz_cmd)
-            %[q_cmd, acc_z_cmd] = LAP(obj, acc_cmd, tz_cmd)
+        function [quat_cmd, acc_z_cmd] = lap(obj, lin_acc_cmd, ang_z_cmd)
+            %[quat_cmd, acc_z_cmd] = LAP(obj, lin_acc_cmd, ang_z_cmd)
             %   Linear Acceleration Planner
             %   Inputs:
-            %       acc_cmd = Global acceleration cmd [m/s^2]
-            %       tz_cmd = Heading cmd [rad]
+            %       lin_acc_cmd = Global linear acceleration cmd [m/s^2]
+            %       ang_z_cmd = Heading cmd [rad]
             %   Outputs:
-            %       q_cmd = Orientation cmd [Quat]
+            %       quat_cmd = Orientation cmd [Quat]
             %       acc_z_cmd = Local z-axis acceleration cmd [m/s^2]
             
             % Adjust for gravity
-            acc_cmd_adj = acc_cmd + obj.phys_model.g_vec;
+            acc_cmd_adj = lin_acc_cmd + obj.phys_model.g_vec;
             
             % Acceleration limiting
             acc_cmd_adj(3) = clamp(acc_cmd_adj(3), obj.acc_mag_min, obj.acc_mag_max);
@@ -100,19 +100,19 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             end
             
             % Orientation
-            qz = Quat([0; 0; 1], tz_cmd);
+            quat_z = Quat([0; 0; 1], ang_z_cmd);
             norm_acc = norm(acc_cmd_adj);
             if norm_acc > 0
                 acc_hat = acc_cmd_adj / norm_acc;
-                cz = cos(tz_cmd);
-                sz = sin(tz_cmd);
-                tx = asin(sz*acc_hat(1) - cz*acc_hat(2));
-                ty = asin((cz*acc_hat(1) + sz*acc_hat(2))/cos(tx));
-                qy = Quat([0; 1; 0], ty);
-                qx = Quat([1; 0; 0], tx);
-                q_cmd = qz * qy * qx;
+                c_z = cos(ang_z_cmd);
+                s_z = sin(ang_z_cmd);
+                ang_x = asin(s_z*acc_hat(1) - c_z*acc_hat(2));
+                ang_y = asin((c_z*acc_hat(1) + s_z*acc_hat(2))/cos(ang_x));
+                quat_y = Quat([0; 1; 0], ang_y);
+                quat_x = Quat([1; 0; 0], ang_x);
+                quat_cmd = quat_z * quat_y * quat_x;
             else
-                q_cmd = qz;
+                quat_cmd = quat_z;
             end
             
             % Acceleration z-axis cmd
@@ -121,28 +121,28 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             acc_z_cmd = acc_cmd_loc(3);
         end
         
-        function f_ang = qoc(obj, q_cmd)
-            %f_ang = QOC(obj, q_cmd)
+        function f_ang = qoc(obj, quat_cmd)
+            %f_ang = QOC(obj, quat_cmd)
             %   Quaternion Orientation Controller
             %   Inputs:
-            %       q_cmd = Orientation cmd [Quat]
+            %       quat_cmd = Orientation cmd [Quat]
             %   Outputs:
-            %       f_ang = Angular prop forces [N]
+            %       f_ang = Angular prop force vector [N]
             
             % Compute error quaternion
-            q_err = q_cmd \ obj.state.ang_pos;
-            if q_err.w < 0
-                q_err = -q_err;
+            quat_err = quat_cmd \ obj.state.ang_pos;
+            if quat_err.w < 0
+                quat_err = -quat_err;
             end
             
             % Compute net torque cmd
-            tau = zeros(3, 1);
-            tau(1) = obj.quat_x_pid.update(-q_err.x, 0, obj.quat_sat);
-            tau(2) = obj.quat_y_pid.update(-q_err.y, 0, obj.quat_sat);
-            tau(3) = obj.quat_z_pid.update(-q_err.z, 0, obj.quat_sat);
+            tau_cmd = zeros(3, 1);
+            tau_cmd(1) = obj.quat_x_pid.update(-quat_err.x, 0, obj.quat_sat);
+            tau_cmd(2) = obj.quat_y_pid.update(-quat_err.y, 0, obj.quat_sat);
+            tau_cmd(3) = obj.quat_z_pid.update(-quat_err.z, 0, obj.quat_sat);
             
             % Compute force cmd
-            f_ang = obj.phys_model.D_bar_ang * tau;
+            f_ang = obj.phys_model.D_bar_ang * tau_cmd;
         end
         
         function f_lin = lac(obj, acc_z_cmd)
@@ -204,4 +204,3 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
         end
     end
 end
-

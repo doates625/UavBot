@@ -5,7 +5,7 @@
  */
 #include <Imu.h>
 #include <Controller.h>
-#include <Motors.h>
+#include <Props.h>
 #include <Bluetooth.h>
 #include <State.h>
 #include <DebugLed.h>
@@ -37,7 +37,7 @@ void setup()
 	{
 		DebugLed::flash(1);
 	}
-	Motors::init();
+	Props::init();
 	Controller::init();
 	Bluetooth::init();
 	DebugLed::set(0);

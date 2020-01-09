@@ -14,6 +14,6 @@ namespace Bluetooth
 	void init();
 	bool update();
 	uint8_t get_state_cmd();
-	const Vector<3>& get_acc_cmd();
-	float get_tz_cmd();
+	const Vector<3>& get_lin_acc_cmd();
+	float get_ang_z_cmd();
 }

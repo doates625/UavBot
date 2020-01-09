@@ -12,7 +12,7 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
         remote;     % UAV remote controller [UAV.Interfaces.Remote]
         server;     % Serial interface [SerialServer]
         got_resp;   % Response flag [logical]
-        f_prop;     % Prop forces [N]
+        f_props;    % Prop forces [N]
     end
     
     methods (Access = public)
@@ -41,16 +41,16 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
 
             % Init fields
             obj.got_resp = false;
-            obj.f_prop = zeros(4, 1);
+            obj.f_props = zeros(4, 1);
         end
         
         function state = update(obj, cmd)
             %state = UPDATE(obj, cmd)
             %   Send commands and get new state
             %   Inputs:
-            %       cmd = UAV command [UAV.Cmd]
+            %       cmd = UAV command [UAV.State.Cmd]
             %   Outputs:
-            %       state = UAV state [UAV.State]
+            %       state = UAV state [UAV.State.State]
             
             % Transmit commands and state data
             obj.remote.update(cmd);
@@ -63,7 +63,7 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
             end
             
             % Simulate dynamics
-            state = obj.update_sim(obj.f_prop, cmd.state);
+            state = obj.update_sim(obj.f_props, cmd.enum);
         end
         
         function delete(obj)
@@ -104,7 +104,7 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
             %   [12-15] Force-- [float, N]
             str = Struct(server.get_rx_data());
             for i = 1:4
-                obj.f_prop(i) = str.get('single');
+                obj.f_props(i) = str.get('single');
             end
             obj.got_resp = true;
         end

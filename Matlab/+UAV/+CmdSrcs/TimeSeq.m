@@ -3,9 +3,9 @@ classdef TimeSeq < UAV.CmdSrcs.CmdSrc
     %    Author: Dan Oates (WPI Class of 2020)
     
     properties (SetAccess = protected)
-        t_steps;     % Timesteps [1 x N] [s]
-        acc_cmds;    % Global acceleration cmds [3 x N] [m/s^2]
-        tz_cmds;     % Heading cmds [1 x N] [rad]
+        time_cmds;      % Time of cmds [s]
+        lin_acc_cmds;   % Global linear acceleration cmds [m/s^2]
+        ang_z_cmds;     % Heading cmds [rad]
     end
     properties (Access = protected)
         i_cmd;   % Cmd index [cnts]
@@ -13,65 +13,61 @@ classdef TimeSeq < UAV.CmdSrcs.CmdSrc
     end
     
     methods (Access = public)
-        function obj = TimeSeq(t_steps, acc_cmds, tz_cmds)
+        function obj = TimeSeq(time_cmds, lin_acc_cmds, ang_z_cmds)
             %TIMESEQ Construct command time sequence
-            %   
-            %   obj = TIMESEQ(t_steps, acc_cmds, tz_cmds)
+            %   obj = TIMESEQ(time_cmds, lin_acc_cmds, ang_z_cmds)
             %       Construct custom sequence
             %       Inputs:
-            %           t_steps = Timesteps [1 x N] [s]
-            %           acc_cmds = Global acceleration cmds [3 x N] [m/s^2]
-            %           tz_cmds = Heading cmds [1 x N] [rad]
-            %   
+            %           time_cmds = Time of cmds [s]
+            %           lin_acc_cmds = Global linear acceleration cmds [m/s^2]
+            %           ang_z_cmds = Heading cmds [rad]
             %   obj = TIMESEQ() Construct default sequence
-            %   
-            %   Timesteps must be evenly-spaced.
             
             % Default args
             if nargin == 0
                 % Timesteps
                 f_step = 50.0;
                 t_step = 1 / f_step;
-                t_steps = 0:t_step:10;
-                N = length(t_steps);
+                time_cmds = 0:t_step:10;
+                n = length(time_cmds);
                 
                 % Acceleration cmds
-                acc_cmds = zeros(3, N);
-                acc_cmds(1, t_steps >= 0) = +5;
-                acc_cmds(1, t_steps >= 2) = -5;
-                acc_cmds(1, t_steps >= 4) = 0;
-                acc_cmds(2, t_steps >= 4) = +5;
-                acc_cmds(2, t_steps >= 6) = -5;
-                acc_cmds(2, t_steps >= 8) = 0;
-                acc_cmds(3, t_steps >= 3) = +5;
-                acc_cmds(3, t_steps >= 5) = -5;
-                acc_cmds(3, t_steps >= 7) = 0;
+                lin_acc_cmds = zeros(3, n);
+                lin_acc_cmds(1, time_cmds >= 0) = +5;
+                lin_acc_cmds(1, time_cmds >= 2) = -5;
+                lin_acc_cmds(1, time_cmds >= 4) = 0;
+                lin_acc_cmds(2, time_cmds >= 4) = +5;
+                lin_acc_cmds(2, time_cmds >= 6) = -5;
+                lin_acc_cmds(2, time_cmds >= 8) = 0;
+                lin_acc_cmds(3, time_cmds >= 3) = +5;
+                lin_acc_cmds(3, time_cmds >= 5) = -5;
+                lin_acc_cmds(3, time_cmds >= 7) = 0;
                 
                 % Heading cmds
-                tz_cmds = zeros(1, N);
-                tz_cmds(t_steps >= 0) = t_steps;
-                tz_cmds = wrap(tz_cmds, -pi, +pi);
+                ang_z_cmds = zeros(1, n);
+                ang_z_cmds(time_cmds >= 0) = time_cmds;
+                ang_z_cmds = wrap(ang_z_cmds, -pi, +pi);
             elseif nargin ~= 3
                 error('Invalid nargin.')
             end
             
             % Copy args
-            obj.t_steps = t_steps;
-            obj.acc_cmds = acc_cmds;
-            obj.tz_cmds = tz_cmds;
+            obj.time_cmds = time_cmds;
+            obj.lin_acc_cmds = lin_acc_cmds;
+            obj.ang_z_cmds = ang_z_cmds;
             obj.i_cmd = 1;
-            obj.n_cmd = length(t_steps);
+            obj.n_cmd = length(time_cmds);
         end
         
-        function [cmd, t] = get_cmd(obj)
-            %[cmd, t] = GET_CMD(obj) Get commands and time
+        function [cmd, time] = get_cmd(obj)
+            %[cmd, time] = GET_CMD(obj) Get command and time
             %   Outputs:
             %       cmd = UAV command [UAV.Cmd]
-            %       t = Time [s]
-            acc = obj.acc_cmds(:, obj.i_cmd);
-            tz = obj.tz_cmds(obj.i_cmd);
-            cmd = UAV.Cmd(acc, tz, 'Enabled');
-            t = obj.t_steps(obj.i_cmd);
+            %       time = Time [s]
+            lin_acc = obj.lin_acc_cmds(:, obj.i_cmd);
+            ang_z = obj.ang_z_cmds(obj.i_cmd);
+            cmd = UAV.State.Cmd(lin_acc, ang_z, UAV.State.Enum.Enabled);
+            time = obj.time_cmds(obj.i_cmd);
             obj.i_cmd = obj.i_cmd + 1;
         end
         

@@ -4,7 +4,7 @@
  */
 #include "Bluetooth.h"
 #include <Imu.h>
-#include <Motors.h>
+#include <Props.h>
 #include <State.h>
 #include <Platform.h>
 #include <SerialServer.h>
@@ -32,8 +32,8 @@ namespace Bluetooth
 
 	// Controller commands
 	uint8_t state_cmd = State::state_disabled;
-	Vector<3> acc_cmd;
-	float tz_cmd = 0.0f;
+	Vector<3> lin_acc_cmd;
+	float ang_z_cmd = 0.0f;
 	bool got_cmds = false;
 
 	// Init flag
@@ -84,38 +84,32 @@ uint8_t Bluetooth::get_state_cmd()
 }
 
 /**
- * @brief Returns global accel cmd [m/s^2]
+ * @brief Returns global linear acceleration cmd [m/s^2]
  */
-const Vector<3>& Bluetooth::get_acc_cmd()
+const Vector<3>& Bluetooth::get_lin_acc_cmd()
 {
 	#if defined(STUB_BLUETOOTH)
-		acc_cmd(0) = 0.0f;
-		acc_cmd(1) = 0.0f;
-		acc_cmd(2) = -10.0f;
+		lin_acc_cmd(0) = 0.0f;
+		lin_acc_cmd(1) = 0.0f;
+		lin_acc_cmd(2) = -10.0f;
 	#endif
-	return acc_cmd;
+	return lin_acc_cmd;
 }
 
 /**
  * @brief Returns heading cmd [rad]
  */
-float Bluetooth::get_tz_cmd()
+float Bluetooth::get_ang_z_cmd()
 {
 	#if defined(STUB_BLUETOOTH)
 		heading_cmd = 0.0f;
 	#endif
-	return tz_cmd;
+	return ang_z_cmd;
 }
 
 /**
  * @brief Gets UAV state command
  * @param data Data pointer
- * 
- * Data format:
- * [00-00] = State cmd
- *     0x00 = Enabled
- *     0x01 = Disabled
- *     0x02 = Failure
  */
 void Bluetooth::msg_rx_state(uint8_t* data)
 {
@@ -125,22 +119,16 @@ void Bluetooth::msg_rx_state(uint8_t* data)
 /**
  * @brief Gets teleop commands from remote and sends state back
  * @param data Data pointer
- * 
- * Data format:
- * [00-03] Global accel x [float, m/s^2]
- * [04-07] Global accel y [float, m/s^2]
- * [08-11] Global accel z [float, m/s^2]
- * [12-15] Heading cmd [float, rad]
  */
 void Bluetooth::msg_rx_update(uint8_t* data)
 {
 	// Copy cmds with ISRs disabled
 	Struct str(data);
 	Platform::disable_interrupts();
-	str >> acc_cmd(0);
-	str >> acc_cmd(1);
-	str >> acc_cmd(2);
-	str >> tz_cmd;
+	str >> lin_acc_cmd(0);
+	str >> lin_acc_cmd(1);
+	str >> lin_acc_cmd(2);
+	str >> ang_z_cmd;
 	Platform::enable_interrupts();
 
 	// Transmit state response
@@ -151,43 +139,23 @@ void Bluetooth::msg_rx_update(uint8_t* data)
 /**
  * @brief Transmits state data to remote
  * @param data Data pointer
- * 
- * Data format:
- * [00-03] Quat-w [float]
- * [04-07] Quat-x [float]
- * [08-11] Quat-y [float]
- * [12-15] Quat-z [float]
- * [16-19] Omega-x [float, rad/s]
- * [20-23] Omega-y [float, rad/s]
- * [24-27] Omega-z [float, rad/s]
- * [28-31] Accel-x [float, m/s^2]
- * [32-35] Accel-y [float, m/s^2]
- * [36-39] Accel-z [float, m/s^2]
- * [40-43] Force++ [float, N]
- * [44-47] Force+- [float, N]
- * [48-51] Force-+ [float, N]
- * [52-55] Force-- [float, N]
- * [56-56] State [uint8_t, enum]
- *     0x00 = Enabled
- *     0x01 = Disabled
- *     0x02 = Failure
  */ 
 void Bluetooth::msg_tx_update(uint8_t* data)
 {
 	// Copy state data with ISRs disabled
 	Platform::disable_interrupts();
-	Vector<4> quat = Imu::get_quat();
-	Vector<3> omega = Imu::get_omega();
-	Vector<3> accel = Imu::get_accel();
-	Vector<4> forces = Motors::get_forces();
+	Vector<4> ang_pos = Imu::get_ang_pos();
+	Vector<3> ang_vel = Imu::get_ang_vel();
+	Vector<3> lin_acc = Imu::get_lin_acc();
+	Vector<4> f_props = Props::get_f_props();
 	state_t state = State::get();
 	Platform::enable_interrupts();
 
 	// Pack data
 	Struct str(data);
-	for (uint8_t i = 0; i < 4; i++) str << quat(i);
-	for (uint8_t i = 0; i < 3; i++) str << omega(i);
-	for (uint8_t i = 0; i < 3; i++) str << accel(i);
-	for (uint8_t i = 0; i < 4; i++) str << forces(i);
+	for (uint8_t i = 0; i < 4; i++) str << ang_pos(i);
+	for (uint8_t i = 0; i < 3; i++) str << ang_vel(i);
+	for (uint8_t i = 0; i < 3; i++) str << lin_acc(i);
+	for (uint8_t i = 0; i < 4; i++) str << f_props(i);
 	str << (uint8_t)state;
 }

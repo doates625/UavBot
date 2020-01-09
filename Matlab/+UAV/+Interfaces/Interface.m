@@ -4,7 +4,7 @@ classdef (Abstract) Interface < handle
     
     properties (SetAccess = protected)
         phys_model; % UAV physical model [UAV.Models.Phys]
-    	state;      % UAV state [UAV.State]
+    	state;      % UAV state [UAV.State.State]
     end
     
     methods (Access = public)
@@ -13,7 +13,7 @@ classdef (Abstract) Interface < handle
             %   Inputs:
             %       phys_model = UAV physical model [UAV.Models.Phys]
             obj.phys_model = phys_model;
-            obj.state = UAV.State();
+            obj.state = UAV.State.State();
         end
     end
     
@@ -22,8 +22,8 @@ classdef (Abstract) Interface < handle
         %state = UPDATE(obj, cmd)
         %   Send commands and get new state
         %   Inputs:
-        %       cmd = UAV command [UAV.Cmd]
+        %       cmd = UAV command [UAV.State.Cmd]
         %   Outputs:
-        %       state = UAV state [UAV.State]
+        %       state = UAV state [UAV.State.State]
     end
 end

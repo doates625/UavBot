@@ -3,7 +3,7 @@
  * @author Dan Oates (WPI Class of 2020)
  */
 #include "State.h"
-#include <Motors.h>
+#include <Props.h>
 #include <Controller.h>
 #include <Imu.h>
 #include <Bluetooth.h>
@@ -28,14 +28,14 @@ void State::update()
 		// Enabled state
 		case state_enabled:
 			Controller::update();
-			Motors::set_forces(Controller::get_forces());
+			Props::set_f_props(Controller::get_f_props());
 			state = Imu::is_flipped() ?
 				state_failed : (state_t)Bluetooth::get_state_cmd();
 			break;
 		
 		// Disabled state
 		case state_disabled:
-			Motors::set_forces(Vector<4>());
+			Props::set_f_props(Vector<4>());
 			state = (state_t)Bluetooth::get_state_cmd();
 			if (state == state_enabled)
 			{
@@ -46,7 +46,7 @@ void State::update()
 
 		// Failed state (terminal)
 		case state_failed:
-			Motors::set_forces(Vector<4>());
+			Props::set_f_props(Vector<4>());
 			break;
 	}
 }
