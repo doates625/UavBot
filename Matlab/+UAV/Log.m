@@ -31,7 +31,7 @@ classdef Log < handle
                 % Generate filename from time
                 time = datetime(now, 'ConvertFrom', 'datenum');
                 time.Format = 'MM-dd-HH-mm';
-                obj.file_name = ['Log-', char(time), '.mat'];
+                obj.file_name = ['Log-', char(time)];
                 
                 % Pre-allocate log arrays
                 n = obj.init_length;
@@ -51,7 +51,7 @@ classdef Log < handle
             else
                 % Load from file
                 obj.file_name = file_name;
-                struct_ = load([obj.log_path, file_name]);
+                struct_ = load(obj.full_path());
                 obj = struct_.obj;
             end
         end
@@ -88,6 +88,21 @@ classdef Log < handle
                 obj.log_f_props = obj.log_f_props(:, 1:n);
                 obj.trimmed = true;
             end
+        end
+        
+        function obj = crop(obj, t_min, t_max)
+            %obj = CROP(obj, t_min, t_max) Crops log in time to range [t_min, t_max]
+            i_min = find(obj.log_time > t_min, 1, 'first');
+            i_max = find(obj.log_time > t_max, 1, 'first');
+            obj.log_time = obj.log_time(:, i_min:i_max);
+            obj.log_ang_pos = obj.log_ang_pos(:, i_min:i_max);
+            obj.log_ang_vel = obj.log_ang_vel(:, i_min:i_max);
+            obj.log_lin_acc = obj.log_lin_acc(:, i_min:i_max);
+            obj.log_lin_acc_cmd = obj.log_lin_acc_cmd(:, i_min:i_max);
+            obj.log_ang_z = obj.log_ang_z(:, i_min:i_max);
+            obj.log_ang_z_cmd = obj.log_ang_z_cmd(:, i_min:i_max);
+            obj.log_f_props = obj.log_f_props(:, i_min:i_max);
+            obj.log_length = length(obj.log_time);
         end
         
         function obj = cmt(obj, comment)
@@ -141,15 +156,14 @@ classdef Log < handle
         
         function save(obj)
             %SAVE(obj) Saves log to mat file
-            save([obj.log_path, obj.file_name], 'obj');
+            save(obj.full_path(), 'obj');
         end
     end
     
     methods (Access = protected)
-        function fig = make_fig(obj, name)
-            %fig = MAKE_FIG(obj, window_title) Makes new figure with given name
-            name = [name, ' (', obj.file_name, ')'];
-            fig = figure('Name', name);
+        function path = full_path(obj)
+            %path = FULL_PATH(obj) Full relative file path with '.mat' extension
+            path = [obj.log_path, obj.file_name, '.mat'];
         end
         
         function plot_ang_pos(obj)
@@ -226,6 +240,12 @@ classdef Log < handle
                 plot(obj.log_time, obj.log_f_props(i, :), 'r-')
                 ylim([f_min, f_max])
             end
+        end
+        
+        function fig = make_fig(obj, name)
+            %fig = MAKE_FIG(obj, window_title) Makes new figure with given name
+            name = [name, ' (', obj.file_name, ')'];
+            fig = figure('Name', name);
         end
     end
 end
