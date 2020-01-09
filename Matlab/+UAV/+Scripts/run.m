@@ -34,7 +34,8 @@ while true
     end
 end
 
-% Save and plot log
+% Log processing
+log.trim();
 log.save();
 log.plot();
 
