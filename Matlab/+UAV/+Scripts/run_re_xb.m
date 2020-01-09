@@ -5,6 +5,7 @@ function log = run_re_xb()
 %   Author: Dan Oates (WPI Class of 2020)
 
 clc
+instrreset
 uav = UAV.Interfaces.Remote();
 cmd_src = UAV.CmdSrcs.Xbox();
 run_gui = true;
