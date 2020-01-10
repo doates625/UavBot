@@ -30,6 +30,7 @@ classdef Log < handle
             %LOG Create UAV flight log
             %   obj = LOG() Create empty UAV log
             %   obj = LOG(file_name) Load log from mat file
+            %   obj = LOG('recent') Loads most recent log from mat file
             if nargin < 1
                 % Generate filename from time
                 time = datetime(now, 'ConvertFrom', 'datenum');
@@ -52,10 +53,18 @@ classdef Log < handle
                 obj.trimmed = false;
                 obj.comments = {};
             else
-                % Load from file
-                obj.file_name = file_name;
-                struct_ = load(obj.full_path());
-                obj = struct_.obj;
+                if strcmp(file_name, 'recent')
+                    % Load most recent log
+                    log_files = dir([obj.log_path, '*.mat']);
+                    file_name = log_files(end).name;
+                    file_name = file_name(1:end-4);
+                    obj = UAV.Logging.Log(file_name);
+                else
+                    % Load from file
+                    obj.file_name = file_name;
+                    struct_ = load(obj.full_path());
+                    obj = struct_.obj;
+                end
             end
         end
        
@@ -125,6 +134,7 @@ classdef Log < handle
             %   PLOT(obj, 'lin_acc') Plots linear acceleration
             %   PLOT(obj, 'ang_z') Plots heading
             %   PLOT(obj, 'f_props') Plots propeller forces
+            %   PLOT(obj, 'ang_ctrl') Plots angle control
             %   PLOT(obj, 'all') Plots all items above
             %   PLOT(obj) is shorthand for PLOT(obj, 'all')
             %   PLOT(obj, cell) Calls plot for each name in cell
@@ -146,12 +156,14 @@ classdef Log < handle
                     case 'lin_acc', obj.plot_lin_acc();
                     case 'ang_z', obj.plot_ang_z();
                     case 'f_props', obj.plot_f_props();
+                    case 'ang_ctrl', obj.plot_ang_ctrl();
                     case 'all'
                         obj.plot_ang_pos();
                         obj.plot_ang_vel();
                         obj.plot_lin_acc();
                         obj.plot_ang_z();
                         obj.plot_f_props();
+                        obj.plot_ang_ctrl();
                     otherwise, error('Invalid name: %s', name)
                 end
             end
@@ -242,6 +254,23 @@ classdef Log < handle
                 ylabel('Force [N]')
                 plot(obj.log_time, obj.log_f_props(i, :), 'r-')
                 ylim([f_min, f_max])
+            end
+        end
+        
+        function plot_ang_ctrl(obj)
+            %PLOT_ANG_CTRL(obj) Generates angle control plots in new figure
+            obj.make_fig('Angle Control');
+            D_mat_ang = UAV.Models.Phys().D_mat_ang;
+            tau_est = D_mat_ang * obj.log_f_props;
+            axis_lbls = {'x', 'y', 'z'};
+            for i = 1:3
+                subplot(3, 1, i)
+                hold on, grid on
+                title(sprintf('Quat-%s Control', axis_lbls{i}))
+                xlabel('Time [s]')
+                plot(obj.log_time, obj.log_ang_pos(i+1, :), 'b-')
+                plot(obj.log_time, tau_est(i, :), 'r-')
+                legend('Quaternion', 'Torque [N*m]')
             end
         end
         
