@@ -1,4 +1,4 @@
-classdef Log
+classdef Log < handle
     %LOG Class for creating, processing, and saving UAV flight logs
     %   Author: Dan Oates (WPI Class of 2020)
     
