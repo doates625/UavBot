@@ -18,8 +18,13 @@ function print_logs()
         
         % Print comments
         log = UAV.Logging.Log(name);
-        for c = 1:length(log.comments)
-            fprintf('\t- %s\n', log.comments{c});
+        n_c = length(log.comments);
+        if n_c > 0
+            for c = 1:n_c
+                fprintf('\t- %s\n', log.comments{c});
+            end
+        else
+            fprintf('\t(No comments)\n');
         end
         
         % Print gap
