@@ -4,7 +4,8 @@ classdef Xbox < UAV.CmdSrcs.CmdSrc
     
     properties (Access = protected)
         xbox;       % Xbox controller [Xbox360]
-        acc_max;    % Max acceleration cmd [m/s^2]
+        acc_h_max;  % Max horizontal acceleration [m/s^2]
+        acc_v_max;  % Max vertical acceleration [m/s^2]
         wz_max;     % Max heading cmd rate [rad/s]
         tz_int;     % Angle cmd integrator [Integrator]
         state_enum; % State machine enum cmd [UAV.State.Enum]
@@ -13,25 +14,28 @@ classdef Xbox < UAV.CmdSrcs.CmdSrc
     end
     
     methods (Access = public)
-        function obj = Xbox(xbox_id, xbox_dz, acc_max, wz_max)
-            %obj = XBOX(xbox_id, xbox_dz, acc_max, wz_max)
+        function obj = Xbox(xbox_id, xbox_dz, acc_h_max, acc_v_max, wz_max)
+            %obj = XBOX(xbox_id, xbox_dz, acc_h_max, acc_v_max, wz_max)
             %   Construct Xbox UAV controller
             %   Inputs:
             %       xbox_id = Joystick ID [1-4]
             %       xbox_dz = Joystick dead zone [0-1]
-            %       acc_max = Max acceleration cmd [m/s^2]
+            %       acc_h_max = Max horizontal acceleration [m/s^2]
+            %       acc_v_max = Max vertical acceleration [m/s^2]
             %       wz_max = Max heading cmd rate [rad/s]
             
             % Default args
-            if nargin < 4, wz_max = pi/4; end
-            if nargin < 3, acc_max = 1.0; end
+            if nargin < 5, wz_max = pi/4; end
+            if nargin < 4, acc_v_max = 0.5; end
+            if nargin < 3, acc_h_max = 2.0; end
             if nargin < 2, xbox_dz = 0.075; end
             if nargin < 1, xbox_id = 1; end
             
             % Init properties
             import('UAV.State.Enum');
             obj.xbox = Xbox360(xbox_id, xbox_dz);
-            obj.acc_max = acc_max;
+            obj.acc_h_max = acc_h_max;
+            obj.acc_v_max = acc_v_max;
             obj.wz_max = wz_max;
             obj.tz_int = Integrator();
             obj.state_enum = Enum.Disabled;
@@ -51,9 +55,9 @@ classdef Xbox < UAV.CmdSrcs.CmdSrc
             
             % Parse linear acceleration command
             lin_acc = zeros(3, 1);
-            lin_acc(1) = -obj.acc_max * obj.xbox.axis('Ly');
-            lin_acc(2) = -obj.acc_max * obj.xbox.axis('Lx');
-            lin_acc(3) = -obj.acc_max * obj.xbox.axis('Trig');
+            lin_acc(1) = -obj.acc_h_max * obj.xbox.axis('Ly');
+            lin_acc(2) = -obj.acc_h_max * obj.xbox.axis('Lx');
+            lin_acc(3) = -obj.acc_v_max * obj.xbox.axis('Trig');
             lin_acc = Quat([0; 0; 1], ang_z).rotate(lin_acc);
             
             % Parse state command
