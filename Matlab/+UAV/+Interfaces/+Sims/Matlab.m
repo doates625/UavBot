@@ -46,10 +46,10 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             
             % Acceleration PID controller
             acc_kp = 0;
-            acc_ki = -0.25 * obj.phys_model.mass * obj.ctrl_model.s_az;
+            acc_ki = -obj.phys_model.mass * obj.ctrl_model.s_az;
             acc_kd = 0;
-            obj.f_lin_min = obj.phys_model.f_max * obj.ctrl_model.fr_min;
-            obj.f_lin_max = obj.phys_model.f_max * obj.ctrl_model.fr_max;
+            obj.f_lin_min = 4 * obj.phys_model.f_max * obj.ctrl_model.fr_min;
+            obj.f_lin_max = 4 * obj.phys_model.f_max * obj.ctrl_model.fr_max;
             obj.acc_z_pid = PID(acc_kp, acc_ki, acc_kd, obj.f_lin_min, obj.f_lin_max, obj.f_sim);
         end
         
@@ -154,8 +154,7 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             %       f_lin = Linear prop force vector [N]
             acc_glo = obj.state.lin_acc;
             acc_loc = obj.state.ang_pos.inv().rotate(acc_glo);
-            f_lin = obj.acc_z_pid.update(acc_z_cmd - acc_loc(3));
-            f_lin = ones(4, 1) * f_lin;
+            f_lin = obj.phys_model.D_bar_lin * obj.acc_z_pid.update(acc_z_cmd - acc_loc(3));
         end
         
         function f_prop = frc(obj, f_ang, f_lin)

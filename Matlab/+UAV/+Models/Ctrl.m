@@ -33,7 +33,7 @@ classdef Ctrl
                 s_qx = -5.0;
                 s_qy = -5.0;
                 s_qz = -5.0;
-                s_az = -10.0;
+                s_az = -8.0;
                 fr_min = 0.1;
                 fr_max = 0.9;
             elseif nargin ~= 6

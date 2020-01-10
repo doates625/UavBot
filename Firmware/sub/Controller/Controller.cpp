@@ -19,8 +19,8 @@ using CppUtil::sqa;
 namespace Controller
 {
 	// Physical Constants
-	const float I_xx = 1.15e-03f;	// Inertia x-axis [kg*m^2]
-	const float I_yy = 1.32e-03f;	// Inertia y-axis [kg*m^2]
+	const float I_xx = 1.00e-03f;	// Inertia x-axis [kg*m^2]
+	const float I_yy = 1.00e-03f;	// Inertia y-axis [kg*m^2]
 	const float I_zz = 2.24e-03f;	// Inertia z-axis [kg*m^2]
 	const float mass = 0.546f;		// Total mass [kg]
 	const float gravity = 9.807f;	// Gravity [m/s^2]
@@ -30,7 +30,7 @@ namespace Controller
 	const float s_qx = -5.0f;		// Quat x-axis pole [s^-1]
 	const float s_qy = -5.0f;		// Quat y-axis pole [s^-1]
 	const float s_qz = -3.0f;		// Quat z-axis pole [s^-1]
-	const float s_az = -6.0f;		// Accel z-axis pole [s^-1]
+	const float s_az = -8.0f;		// Accel z-axis pole [s^-1]
 	const float fr_min = 0.1f;		// Min prop thrust ratio [N/N]
 	const float fr_max = 0.9f;		// Max prop thrust ratio [N/N]
 
@@ -41,8 +41,8 @@ namespace Controller
 	const float acc_mag_min = acc_max * fr_min;
 	const float acc_mag_max = acc_max * fr_max;
 	const float acc_mag_max_sq = sqa(acc_mag_max);
-	const float f_lin_min = f_prop_max * fr_min;
-	const float f_lin_max = f_prop_max * fr_max;
+	const float f_lin_min = 4.0f * f_prop_max * fr_min;
+	const float f_lin_max = 4.0f * f_prop_max * fr_max;
 
 	// Quat x-axis PID controller
 	const float qx_kp = +6.0f * I_xx * powf(s_qx, 2.0f);
@@ -64,7 +64,7 @@ namespace Controller
 
 	// Accel z-axis PID controller
 	const float az_kp = 0.0f;
-	const float az_ki = -0.25f * mass * s_az;
+	const float az_ki = -mass * s_az;
 	const float az_kd = 0.0f;
 	PID acc_z_pid(az_kp, az_ki, az_kd, f_lin_min, f_lin_max, f_ctrl);
 
@@ -72,7 +72,8 @@ namespace Controller
 	Vector<3> x_hat;
 	Vector<3> y_hat;
 	Vector<3> z_hat;
-	Matrix<4, 3> D_bar;
+	Matrix<4, 3> D_bar_ang;
+	Matrix<4, 1> D_bar_lin;
 	Vector<4> f_props;
 
 	// Quaternion PID saturation flag
@@ -89,34 +90,40 @@ void Controller::init()
 {
 	if (!init_complete)
 	{
-		// Initialize x unit vector
+		// Initialize x-axis unit vector
 		x_hat(0) = +1.000000e+00f;
 		x_hat(1) = +0.000000e+00f;
 		x_hat(2) = +0.000000e+00f;
 
-		// Initialize y unit vector
+		// Initialize y-axis unit vector
 		y_hat(0) = +0.000000e+00f;
 		y_hat(1) = +1.000000e+00f;
 		y_hat(2) = +0.000000e+00f;
 
-		// Initialize z unit vector
+		// Initialize z-axis unit vector
 		z_hat(0) = +0.000000e+00f;
 		z_hat(1) = +0.000000e+00f;
 		z_hat(2) = +1.000000e+00f;
 
-		// Initialize inverse moment arm matrix
-		D_bar(0, 0) = +2.688172e+00f;
-		D_bar(0, 1) = -2.688172e+00f;
-		D_bar(0, 2) = +4.545455e+00f;
-		D_bar(1, 0) = -2.688172e+00f;
-		D_bar(1, 1) = -2.688172e+00f;
-		D_bar(1, 2) = -4.545455e+00f;
-		D_bar(2, 0) = +2.688172e+00f;
-		D_bar(2, 1) = +2.688172e+00f;
-		D_bar(2, 2) = -4.545455e+00f;
-		D_bar(3, 0) = -2.688172e+00f;
-		D_bar(3, 1) = +2.688172e+00f;
-		D_bar(3, 2) = +4.545455e+00f;
+		// Initialize inv angular moment arm
+		D_bar_ang(0, 0) = +2.688172e+00f;
+		D_bar_ang(0, 1) = -2.688172e+00f;
+		D_bar_ang(0, 2) = +4.545455e+00f;
+		D_bar_ang(1, 0) = -2.688172e+00f;
+		D_bar_ang(1, 1) = -2.688172e+00f;
+		D_bar_ang(1, 2) = -4.545455e+00f;
+		D_bar_ang(2, 0) = +2.688172e+00f;
+		D_bar_ang(2, 1) = +2.688172e+00f;
+		D_bar_ang(2, 2) = -4.545455e+00f;
+		D_bar_ang(3, 0) = -2.688172e+00f;
+		D_bar_ang(3, 1) = +2.688172e+00f;
+		D_bar_ang(3, 2) = +4.545455e+00f;
+
+		// Initialize inv linear moment arm
+		D_bar_lin(0, 0) = +2.500000e-01f;
+		D_bar_lin(1, 0) = +2.500000e-01f;
+		D_bar_lin(2, 0) = +2.500000e-01f;
+		D_bar_lin(3, 0) = +2.500000e-01f;
 
 		// Set init flag
 		init_complete = true;
@@ -130,7 +137,7 @@ void Controller::update()
 {
 	// Get state and commands
 	Quat ang_pos = Imu::get_ang_pos();
-	Vector<3> lin_acc = Imu::get_lin_acc();
+	Vector<3> lin_acc_loc = Imu::get_lin_acc();
 	Vector<3> lin_acc_cmd = Bluetooth::get_lin_acc_cmd();
 	float ang_z_cmd = Bluetooth::get_ang_z_cmd();
 
@@ -171,7 +178,7 @@ void Controller::update()
 	tau_cmd(0) = quat_x_pid.update(-ang_err.x, 0.0f, quat_sat);
 	tau_cmd(1) = quat_y_pid.update(-ang_err.y, 0.0f, quat_sat);
 	tau_cmd(2) = quat_z_pid.update(-ang_err.z, 0.0f, quat_sat);
-	Vector<4> f_ang = D_bar * tau_cmd;
+	Vector<4> f_ang = D_bar_ang * tau_cmd;
 
 	// Acceleration z-axis cmd
 	lin_acc_cmd(2) -= gravity;
@@ -179,12 +186,8 @@ void Controller::update()
 	float acc_z_cmd = acc_cmd_loc(2);
 
 	// Acceleration z-axis control
-	float f_lin_sca = acc_z_pid.update(acc_z_cmd - lin_acc(2));
-	Vector<4> f_lin;
-	for (uint8_t i = 0; i < 4; i++)
-	{
-		f_lin(i) = f_lin_sca;
-	}
+	float f_lin_sca = acc_z_pid.update(acc_z_cmd - lin_acc_loc(2));
+	Vector<4> f_lin = D_bar_lin * Vector<1>(f_lin_sca);
 
 	// Force regulator controller
 	float p_min = 1.0f;
