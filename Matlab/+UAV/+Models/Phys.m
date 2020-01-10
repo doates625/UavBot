@@ -99,7 +99,9 @@ classdef Phys < handle
             fprintf('const float I_zz = %.2ef;\t// Inertia z-axis [kg*m^2]\n', obj.I_zz);
             fprintf('const float mass = %.3ff;\t\t// Total mass [kg]\n', obj.mass);
             fprintf('const float gravity = %.3ff;\t// Gravity [m/s^2]\n', obj.g_sca);
-            fprintf('\n');
+            fprintf('\n// Inverse Moment Arm Matrix\n');
+            print_mat_cpp('D_bar', obj.D_bar_ang);
+            fprintf('\n')
         end
     end
 end
