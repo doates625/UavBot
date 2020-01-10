@@ -30,7 +30,7 @@ namespace Controller
 	const float s_qx = -5.0f;		// Quat x-axis pole [s^-1]
 	const float s_qy = -5.0f;		// Quat y-axis pole [s^-1]
 	const float s_qz = -3.0f;		// Quat z-axis pole [s^-1]
-	const float s_az = -4.0f;		// Accel z-axis pole [s^-1]
+	const float s_az = -6.0f;		// Accel z-axis pole [s^-1]
 	const float fr_min = 0.1f;		// Min prop thrust ratio [N/N]
 	const float fr_max = 0.9f;		// Max prop thrust ratio [N/N]
 
