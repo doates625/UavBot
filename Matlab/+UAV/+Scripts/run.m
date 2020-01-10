@@ -18,7 +18,7 @@ if nargin < 1, uav = UAV.Interfaces.Sims.Matlab(); end
 
 % Initializations
 if run_gui, gui = UAV.Gui(); end
-log = UAV.Log();
+log = UAV.Logging.Log();
 
 % Command loop
 while true

@@ -1,9 +1,12 @@
-classdef Log < handle
+classdef Log
     %LOG Class for creating, processing, and saving UAV flight logs
     %   Author: Dan Oates (WPI Class of 2020)
     
-    properties (Access = protected, Constant)
+    properties (Constant)
         log_path = 'Logs/';
+    end
+    
+    properties (Access = protected, Constant)
         init_length = 1000;
     end
     
