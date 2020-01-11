@@ -38,15 +38,15 @@ classdef Model < handle
         pole_qy;    % Quat pole y [s^-1]
         pole_qz;    % Quat pole z [s^-1]
         pole_az;    % Lin acc pole z [s^-1]
-        qx_kp_adj;  % Quat-x P-gain adj [N*m/rad]
-        qx_ki_adj;  % Quat-x I-gain adj [N*m/(rad*s)]
-        qx_kd_adj;  % Quat-x D-gain adj [N*m/(rad/s)]
-        qy_kp_adj;  % Quat-y P-gain adj [N*m/rad]
-        qy_ki_adj;  % Quat-y I-gain adj [N*m/(rad*s)]
-        qy_kd_adj;  % Quat-y D-gain adj [N*m/(rad/s)]
-        qz_kp_adj;  % Quat-z P-gain adj [N*m/rad]
-        qz_ki_adj;  % Quat-z I-gain adj [N*m/(rad*s)]
-        qz_kd_adj;  % Quat-z D-gain adj [N*m/(rad/s)]
+        qx_kp_adj;  % Quat-x P-gain fractional adj
+        qx_ki_adj;  % Quat-x I-gain fractional adj
+        qx_kd_adj;  % Quat-x D-gain fractional adj
+        qy_kp_adj;  % Quat-y P-gain fractional adj
+        qy_ki_adj;  % Quat-y I-gain fractional adj
+        qy_kd_adj;  % Quat-y D-gain fractional adj
+        qz_kp_adj;  % Quat-z P-gain fractional adj
+        qz_ki_adj;  % Quat-z I-gain fractional adj
+        qz_kd_adj;  % Quat-z D-gain fractional adj
         
         % Derived Constants
         M_mat_ang;  % Mass angular [kg*m^2]
@@ -100,15 +100,15 @@ classdef Model < handle
             %           pole_qy = Quat pole y [s^-1]
             %           pole_qz = Quat pole z [s^-1]
             %           pole_az = Lin acc pole z [s^-1]
-            %           qx_kp_adj = Quat-x P-gain adj [N*m/rad]
-            %           qx_ki_adj = Quat-x I-gain adj [N*m/(rad*s)]
-            %           qx_kd_adj = Quat-x D-gain adj [N*m/(rad/s)]
-            %           qy_kp_adj = Quat-y P-gain adj [N*m/rad]
-            %           qy_ki_adj = Quat-y I-gain adj [N*m/(rad*s)]
-            %           qy_kd_adj = Quat-y D-gain adj [N*m/(rad/s)]
-            %           qz_kp_adj = Quat-z P-gain adj [N*m/rad]
-            %           qz_ki_adj = Quat-z I-gain adj [N*m/(rad*s)]
-            %           qz_kd_adj = Quat-z D-gain adj [N*m/(rad/s)]
+            %           qx_kp_adj = Quat-x P-gain fractional adj
+            %           qx_ki_adj = Quat-x I-gain fractional adj
+            %           qx_kd_adj = Quat-x D-gain fractional adj
+            %           qy_kp_adj = Quat-y P-gain fractional adj
+            %           qy_ki_adj = Quat-y I-gain fractional adj
+            %           qy_kd_adj = Quat-y D-gain fractional adj
+            %           qz_kp_adj = Quat-z P-gain fractional adj
+            %           qz_ki_adj = Quat-z I-gain fractional adj
+            %           qz_kd_adj = Quat-z D-gain fractional adj
             %   obj = MODEL() Construct default model
             
             % Default args
@@ -191,15 +191,15 @@ classdef Model < handle
             obj.M_inv_lin = M_inv(4:4, :);
             
             % PID gains
-            obj.qx_kp = +6 * inr_xx * pole_qx^2 + qx_kp_adj;
-            obj.qx_ki = -2 * inr_xx * pole_qx^3 + qx_ki_adj;
-            obj.qx_kd = -6 * inr_xx * pole_qx^1 + qx_kd_adj;
-            obj.qy_kp = +6 * inr_yy * pole_qy^2 + qy_kp_adj;
-            obj.qy_ki = -2 * inr_yy * pole_qy^3 + qy_ki_adj;
-            obj.qy_kd = -6 * inr_yy * pole_qy^1 + qy_kd_adj;
-            obj.qz_kp = +6 * inr_zz * pole_qz^2 + qz_kp_adj;
-            obj.qz_ki = -2 * inr_zz * pole_qz^3 + qz_ki_adj;
-            obj.qz_kd = -6 * inr_zz * pole_qz^1 + qz_kd_adj; 
+            obj.qx_kp = (+6 * inr_xx * pole_qx^2) * (1 + qx_kp_adj);
+            obj.qx_ki = (-2 * inr_xx * pole_qx^3) * (1 + qx_ki_adj);
+            obj.qx_kd = (-6 * inr_xx * pole_qx^1) * (1 + qx_kd_adj);
+            obj.qy_kp = (+6 * inr_yy * pole_qy^2) * (1 + qy_kp_adj);
+            obj.qy_ki = (-2 * inr_yy * pole_qy^3) * (1 + qy_ki_adj);
+            obj.qy_kd = (-6 * inr_yy * pole_qy^1) * (1 + qy_kd_adj);
+            obj.qz_kp = (+6 * inr_zz * pole_qz^2) * (1 + qz_kp_adj);
+            obj.qz_ki = (-2 * inr_zz * pole_qz^3) * (1 + qz_ki_adj);
+            obj.qz_kd = (-6 * inr_zz * pole_qz^1) * (1 + qz_kd_adj);
             obj.az_kp = 0;
             obj.az_ki = -mass * pole_az;
             obj.az_kd = 0;
@@ -223,22 +223,22 @@ classdef Model < handle
             fprintf('const float pole_az = %+.1ff;\t// Accel z-axis pole [s^-1]\n', obj.pole_az);
             fprintf('\n');
             fprintf('// Quat X-axis Control\n');
-            fprintf('const float pole_qx = %+.1ff;\t\t// Triple pole [s^-1]\n', obj.pole_qx);
-            fprintf('const float qx_kp_adj = %+.3ff;\t// P-gain adj [N*m/rad]\n', obj.qx_kp_adj);
-            fprintf('const float qx_ki_adj = %+.3ff;\t// I-gain adj [N*m/(rad*s)]\n', obj.qx_ki_adj);
-            fprintf('const float qx_kd_adj = %+.3ff;\t// D-gain adj [N*m/(rad/s)]\n', obj.qx_kd_adj);
+            fprintf('const float pole_qx = %+.1ff;\t// Triple pole [s^-1]\n', obj.pole_qx);
+            fprintf('const float qx_kp_adj = %+.2ff;\t// P-gain fractional adj\n', obj.qx_kp_adj);
+            fprintf('const float qx_ki_adj = %+.2ff;\t// I-gain fractional adj\n', obj.qx_ki_adj);
+            fprintf('const float qx_kd_adj = %+.2ff;\t// D-gain fractional adj\n', obj.qx_kd_adj);
             fprintf('\n');
             fprintf('// Quat Y-axis Control\n');
-            fprintf('const float pole_qy = %+.1ff;\t\t// Triple pole [s^-1]\n', obj.pole_qy);
-            fprintf('const float qy_kp_adj = %+.3ff;\t// P-gain adj [N*m/rad]\n', obj.qy_kp_adj);
-            fprintf('const float qy_ki_adj = %+.3ff;\t// I-gain adj [N*m/(rad*s)]\n', obj.qy_ki_adj);
-            fprintf('const float qy_kd_adj = %+.3ff;\t// D-gain adj [N*m/(rad/s)]\n', obj.qy_kd_adj);
+            fprintf('const float pole_qy = %+.1ff;\t// Triple pole [s^-1]\n', obj.pole_qy);
+            fprintf('const float qy_kp_adj = %+.2ff;\t// P-gain fractional adj\n', obj.qy_kp_adj);
+            fprintf('const float qy_ki_adj = %+.2ff;\t// I-gain fractional adj\n', obj.qy_ki_adj);
+            fprintf('const float qy_kd_adj = %+.2ff;\t// D-gain fractional adj\n', obj.qy_kd_adj);
             fprintf('\n');
             fprintf('// Quat Z-axis Control\n');
-            fprintf('const float pole_qz = %+.1ff;\t\t// Triple pole [s^-1]\n', obj.pole_qz);
-            fprintf('const float qz_kp_adj = %+.3ff;\t// P-gain adj [N*m/rad]\n', obj.qz_kp_adj);
-            fprintf('const float qz_ki_adj = %+.3ff;\t// I-gain adj [N*m/(rad*s)]\n', obj.qz_ki_adj);
-            fprintf('const float qz_kd_adj = %+.3ff;\t// D-gain adj [N*m/(rad/s)]\n', obj.qz_kd_adj);
+            fprintf('const float pole_qz = %+.1ff;\t// Triple pole [s^-1]\n', obj.pole_qz);
+            fprintf('const float qz_kp_adj = %+.2ff;\t// P-gain fractional adj\n', obj.qz_kp_adj);
+            fprintf('const float qz_ki_adj = %+.2ff;\t// I-gain fractional adj\n', obj.qz_ki_adj);
+            fprintf('const float qz_kd_adj = %+.2ff;\t// D-gain fractional adj\n', obj.qz_kd_adj);
             fprintf('\n');
         end
     end

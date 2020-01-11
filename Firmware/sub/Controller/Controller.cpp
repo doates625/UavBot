@@ -32,22 +32,22 @@ namespace Controller
 	const float pole_az = -8.0f;	// Accel z-axis pole [s^-1]
 
 	// Quat X-axis Control
-	const float pole_qx = -5.0f;		// Triple pole [s^-1]
-	const float qx_kp_adj = +0.000f;	// P-gain adj [N*m/rad]
-	const float qx_ki_adj = +0.000f;	// I-gain adj [N*m/(rad*s)]
-	const float qx_kd_adj = +0.000f;	// D-gain adj [N*m/(rad/s)]
+	const float pole_qx = -5.0f;	// Triple pole [s^-1]
+	const float qx_kp_adj = +0.00f;	// P-gain fractional adj
+	const float qx_ki_adj = +0.00f;	// I-gain fractional adj
+	const float qx_kd_adj = +0.00f;	// D-gain fractional adj
 
 	// Quat Y-axis Control
-	const float pole_qy = -5.0f;		// Triple pole [s^-1]
-	const float qy_kp_adj = +0.000f;	// P-gain adj [N*m/rad]
-	const float qy_ki_adj = +0.000f;	// I-gain adj [N*m/(rad*s)]
-	const float qy_kd_adj = +0.000f;	// D-gain adj [N*m/(rad/s)]
+	const float pole_qy = -5.0f;	// Triple pole [s^-1]
+	const float qy_kp_adj = +0.00f;	// P-gain fractional adj
+	const float qy_ki_adj = +0.00f;	// I-gain fractional adj
+	const float qy_kd_adj = +0.00f;	// D-gain fractional adj
 
 	// Quat Z-axis Control
-	const float pole_qz = -3.0f;		// Triple pole [s^-1]
-	const float qz_kp_adj = +0.000f;	// P-gain adj [N*m/rad]
-	const float qz_ki_adj = +0.000f;	// I-gain adj [N*m/(rad*s)]
-	const float qz_kd_adj = +0.000f;	// D-gain adj [N*m/(rad/s)]
+	const float pole_qz = -3.0f;	// Triple pole [s^-1]
+	const float qz_kp_adj = +0.00f;	// P-gain fractional adj
+	const float qz_ki_adj = +0.00f;	// I-gain fractional adj
+	const float qz_kd_adj = +0.00f;	// D-gain fractional adj
 
 	// Derived Constants
 	const float t_ctrl_s = 1.0f / f_ctrl;
@@ -60,21 +60,21 @@ namespace Controller
 	const float f_lin_max = 4.0f * f_prop_max * f_rat_max;
 
 	// Quat X-axis PID Controller
-	const float qx_kp = +6.0f * inr_xx * powf(pole_qx, 2.0f) + qx_kp_adj;
-	const float qx_ki = -2.0f * inr_xx * powf(pole_qx, 3.0f) + qx_ki_adj;
-	const float qx_kd = -6.0f * inr_xx * powf(pole_qx, 1.0f) + qx_kd_adj;
+	const float qx_kp = (+6.0f * inr_xx * powf(pole_qx, 2.0f)) * (1.0f + qx_kp_adj);
+	const float qx_ki = (-2.0f * inr_xx * powf(pole_qx, 3.0f)) * (1.0f + qx_ki_adj);
+	const float qx_kd = (-6.0f * inr_xx * powf(pole_qx, 1.0f)) * (1.0f + qx_kd_adj);
 	PID quat_x_pid(qx_kp, qx_ki, qx_kd, -HUGE_VALF, +HUGE_VALF, f_ctrl);
 
 	// Quat Y-axis PID Controller
-	const float qy_kp = +6.0f * inr_yy * powf(pole_qy, 2.0f) + qy_kp_adj;
-	const float qy_ki = -2.0f * inr_yy * powf(pole_qy, 3.0f) + qy_ki_adj;
-	const float qy_kd = -6.0f * inr_yy * powf(pole_qy, 1.0f) + qy_kd_adj;
+	const float qy_kp = (+6.0f * inr_yy * powf(pole_qy, 2.0f)) * (1.0f + qy_kp_adj);
+	const float qy_ki = (-2.0f * inr_yy * powf(pole_qy, 3.0f)) * (1.0f + qy_ki_adj);
+	const float qy_kd = (-6.0f * inr_yy * powf(pole_qy, 1.0f)) * (1.0f + qy_kd_adj);
 	PID quat_y_pid(qy_kp, qy_ki, qy_kd, -HUGE_VALF, +HUGE_VALF, f_ctrl);
 
 	// Quat Z-axis PID Controller
-	const float qz_kp = +6.0f * inr_zz * powf(pole_qz, 2.0f) + qz_kp_adj;
-	const float qz_ki = -2.0f * inr_zz * powf(pole_qz, 3.0f) + qz_ki_adj;
-	const float qz_kd = -6.0f * inr_zz * powf(pole_qz, 1.0f) + qz_kd_adj;
+	const float qz_kp = (+6.0f * inr_zz * powf(pole_qz, 2.0f)) * (1.0f + qz_kp_adj);
+	const float qz_ki = (-2.0f * inr_zz * powf(pole_qz, 3.0f)) * (1.0f + qz_ki_adj);
+	const float qz_kd = (-6.0f * inr_zz * powf(pole_qz, 1.0f)) * (1.0f + qz_kd_adj);
 	PID quat_z_pid(qz_kp, qz_ki, qz_kd, -HUGE_VALF, +HUGE_VALF, f_ctrl);
 
 	// Accel Z-axis PID Controller
