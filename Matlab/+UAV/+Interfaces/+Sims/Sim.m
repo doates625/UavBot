@@ -8,11 +8,9 @@ classdef (Abstract) Sim < UAV.Interfaces.Interface
     end
     
     methods (Access = public)
-        function obj = Sim(phys_model)
-            %obj = SIM(phys_model) Construct UAV simulator
-            %   Inputs:
-            %       phys_model = UAV physical model [UAV.Models.Phys]
-            obj = obj@UAV.Interfaces.Interface(phys_model);
+        function obj = Sim(model)
+            %obj = SIM(model) Construct UAV simulator with given model [UAV.Model]
+            obj = obj@UAV.Interfaces.Interface(model);
         end
     end
     
@@ -39,7 +37,7 @@ classdef (Abstract) Sim < UAV.Interfaces.Interface
             end
             
             % Angular dynamics
-            ang_acc = obj.phys_model.M_bar_ang * f_props;
+            ang_acc = obj.model.M_inv_ang * f_props;
             ang_vel = obj.state.ang_vel;
             norm_ang_vel = norm(ang_vel);
             if norm_ang_vel > 0
@@ -49,9 +47,9 @@ classdef (Abstract) Sim < UAV.Interfaces.Interface
             ang_vel = ang_vel + ang_acc * obj.t_sim;
             
             % Linear dynamics
-            lin_acc = obj.phys_model.M_bar_lin * f_props;
+            lin_acc = obj.model.M_inv_lin * f_props;
             lin_acc = [0; 0; lin_acc];
-            lin_acc = ang_pos.rotate(lin_acc) - obj.phys_model.g_vec;
+            lin_acc = ang_pos.rotate(lin_acc) - obj.model.gravity_vec;
             
             % Set state
             obj.state = UAV.State.State(ang_pos, ang_vel, lin_acc, f_props, enum);

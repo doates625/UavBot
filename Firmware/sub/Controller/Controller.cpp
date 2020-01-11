@@ -19,52 +19,67 @@ using CppUtil::sqa;
 namespace Controller
 {
 	// Physical Constants
-	const float I_xx = 1.00e-03f;	// Inertia x-axis [kg*m^2]
-	const float I_yy = 1.00e-03f;	// Inertia y-axis [kg*m^2]
-	const float I_zz = 2.24e-03f;	// Inertia z-axis [kg*m^2]
+	const float inr_xx = 1.15e-03f;	// Inertia x-axis [kg*m^2]
+	const float inr_yy = 1.32e-03f;	// Inertia y-axis [kg*m^2]
+	const float inr_zz = 2.24e-03f;	// Inertia z-axis [kg*m^2]
 	const float mass = 0.546f;		// Total mass [kg]
 	const float gravity = 9.807f;	// Gravity [m/s^2]
 
 	// Control Constants
 	const float f_ctrl = 50.0f;		// Control freq [Hz]
-	const float s_qx = -5.0f;		// Quat x-axis pole [s^-1]
-	const float s_qy = -5.0f;		// Quat y-axis pole [s^-1]
-	const float s_qz = -3.0f;		// Quat z-axis pole [s^-1]
-	const float s_az = -8.0f;		// Accel z-axis pole [s^-1]
-	const float fr_min = 0.1f;		// Min prop thrust ratio [N/N]
-	const float fr_max = 0.9f;		// Max prop thrust ratio [N/N]
+	const float f_rat_min = 0.10;	// Min prop thrust ratio
+	const float f_rat_max = 0.90;	// Max prop thrust ratio
+	const float pole_az = -8.0f;	// Accel z-axis pole [s^-1]
 
-	// Derived constants
+	// Quat X-axis Control
+	const float pole_qx = -5.0f;		// Triple pole [s^-1]
+	const float qx_kp_adj = +0.000f;	// P-gain adj [N*m/rad]
+	const float qx_ki_adj = +0.000f;	// I-gain adj [N*m/(rad*s)]
+	const float qx_kd_adj = +0.000f;	// D-gain adj [N*m/(rad/s)]
+
+	// Quat Y-axis Control
+	const float pole_qy = -5.0f;		// Triple pole [s^-1]
+	const float qy_kp_adj = +0.000f;	// P-gain adj [N*m/rad]
+	const float qy_ki_adj = +0.000f;	// I-gain adj [N*m/(rad*s)]
+	const float qy_kd_adj = +0.000f;	// D-gain adj [N*m/(rad/s)]
+
+	// Quat Z-axis Control
+	const float pole_qz = -3.0f;		// Triple pole [s^-1]
+	const float qz_kp_adj = +0.000f;	// P-gain adj [N*m/rad]
+	const float qz_ki_adj = +0.000f;	// I-gain adj [N*m/(rad*s)]
+	const float qz_kd_adj = +0.000f;	// D-gain adj [N*m/(rad/s)]
+
+	// Derived Constants
 	const float t_ctrl_s = 1.0f / f_ctrl;
 	const float t_ctrl_us = 1e6f * t_ctrl_s;
 	const float acc_max = (4.0f * f_prop_max / mass);
-	const float acc_mag_min = acc_max * fr_min;
-	const float acc_mag_max = acc_max * fr_max;
+	const float acc_mag_min = acc_max * f_rat_min;
+	const float acc_mag_max = acc_max * f_rat_max;
 	const float acc_mag_max_sq = sqa(acc_mag_max);
-	const float f_lin_min = 4.0f * f_prop_max * fr_min;
-	const float f_lin_max = 4.0f * f_prop_max * fr_max;
+	const float f_lin_min = 4.0f * f_prop_max * f_rat_min;
+	const float f_lin_max = 4.0f * f_prop_max * f_rat_max;
 
-	// Quat x-axis PID controller
-	const float qx_kp = +6.0f * I_xx * powf(s_qx, 2.0f);
-	const float qx_ki = -2.0f * I_xx * powf(s_qx, 3.0f);
-	const float qx_kd = -6.0f * I_xx * powf(s_qx, 1.0f);
+	// Quat X-axis PID Controller
+	const float qx_kp = +6.0f * inr_xx * powf(pole_qx, 2.0f) + qx_kp_adj;
+	const float qx_ki = -2.0f * inr_xx * powf(pole_qx, 3.0f) + qx_ki_adj;
+	const float qx_kd = -6.0f * inr_xx * powf(pole_qx, 1.0f) + qx_kd_adj;
 	PID quat_x_pid(qx_kp, qx_ki, qx_kd, -HUGE_VALF, +HUGE_VALF, f_ctrl);
 
-	// Quat y-axis PID controller
-	const float qy_kp = +6.0f * I_yy * powf(s_qy, 2.0f);
-	const float qy_ki = -2.0f * I_yy * powf(s_qy, 3.0f);
-	const float qy_kd = -6.0f * I_yy * powf(s_qy, 1.0f);
+	// Quat Y-axis PID Controller
+	const float qy_kp = +6.0f * inr_yy * powf(pole_qy, 2.0f) + qy_kp_adj;
+	const float qy_ki = -2.0f * inr_yy * powf(pole_qy, 3.0f) + qy_ki_adj;
+	const float qy_kd = -6.0f * inr_yy * powf(pole_qy, 1.0f) + qy_kd_adj;
 	PID quat_y_pid(qy_kp, qy_ki, qy_kd, -HUGE_VALF, +HUGE_VALF, f_ctrl);
 
-	// Quat z-axis PID controller
-	const float qz_kp = +6.0f * I_zz * powf(s_qz, 2.0f);
-	const float qz_ki = -2.0f * I_zz * powf(s_qz, 3.0f);
-	const float qz_kd = -6.0f * I_zz * powf(s_qz, 1.0f);
+	// Quat Z-axis PID Controller
+	const float qz_kp = +6.0f * inr_zz * powf(pole_qz, 2.0f) + qz_kp_adj;
+	const float qz_ki = -2.0f * inr_zz * powf(pole_qz, 3.0f) + qz_ki_adj;
+	const float qz_kd = -6.0f * inr_zz * powf(pole_qz, 1.0f) + qz_kd_adj;
 	PID quat_z_pid(qz_kp, qz_ki, qz_kd, -HUGE_VALF, +HUGE_VALF, f_ctrl);
 
-	// Accel z-axis PID controller
+	// Accel Z-axis PID Controller
 	const float az_kp = 0.0f;
-	const float az_ki = -mass * s_az;
+	const float az_ki = -mass * pole_az;
 	const float az_kd = 0.0f;
 	PID acc_z_pid(az_kp, az_ki, az_kd, f_lin_min, f_lin_max, f_ctrl);
 

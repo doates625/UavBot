@@ -242,9 +242,7 @@ classdef Log < handle
         function plot_f_props(obj)
             %PLOT_F_PROPS(obj) Plots prop forces in new figure
             obj.make_fig('Propeller Forces');
-            model = UAV.Models.Phys();
-            f_min = model.f_min;
-            f_max = model.f_max;
+            model = UAV.Model();
             prop_lbls = {'++', '+-', '-+', '--'};
             for i = 1:4
                 subplot(2, 2, i)
@@ -253,14 +251,14 @@ classdef Log < handle
                 xlabel('Time [s]')
                 ylabel('Force [N]')
                 plot(obj.log_time, obj.log_f_props(i, :), 'r-')
-                ylim([f_min, f_max])
+                ylim([model.f_prop_min, model.f_prop_max])
             end
         end
         
         function plot_ang_ctrl(obj)
             %PLOT_ANG_CTRL(obj) Generates angle control plots in new figure
             obj.make_fig('Angle Control');
-            D_mat_ang = UAV.Models.Phys().D_mat_ang;
+            D_mat_ang = UAV.Model().D_mat_ang;
             tau_est = D_mat_ang * obj.log_f_props;
             axis_lbls = {'x', 'y', 'z'};
             for i = 1:3

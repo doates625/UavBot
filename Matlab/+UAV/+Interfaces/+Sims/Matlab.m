@@ -3,7 +3,6 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
     %   Author: Dan Oates (WPI Class of 2020)
     
     properties (Access = protected)
-        ctrl_model;     % UAV control model [UAV.Models.Ctrl]
         acc_mag_min;    % Min linear acceleration magnitude [m/s^2]
         acc_mag_max;    % Max linear acceleration magnitude [m/s^2]
         acc_mag_max_sq; % Max linear accel magnitude squared [(m/s^2)^2]
@@ -12,45 +11,40 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
         quat_z_pid;     % Quaternion z-axis ctrl [PID]
         quat_sat;       % Quaternion PID saturation flag [logical]
         acc_z_pid;      % Acceleration local-z ctrl [PID]
-        f_lin_min;      % Min linear force [N]
-        f_lin_max;      % Max linear force [N]
     end
     
     methods (Access = public)
-        function obj = Matlab(phys_model, ctrl_model)
-            %obj = MATLAB(phys_model, ctrl_model)
-            %   Construct matlab simulator
-            %   Inputs:
-            %       phys_model = UAV physical model [UAV.Models.Phys]
-            %       ctrl_model = UAV control model [UAV.Models.Ctrl]
-            
-            % Default args
-            if nargin < 2, ctrl_model = UAV.Models.Ctrl(); end
-            if nargin < 1, phys_model = UAV.Models.Phys(); end
+        function obj = Matlab(model)
+            %obj = MATLAB(model) Construct Matlab simulator with given model [UAV.Model]
             
             % Superconstructor
-            obj = obj@UAV.Interfaces.Sims.Sim(phys_model);
-            obj.ctrl_model = ctrl_model;
+            if nargin < 1, model = UAV.Model(); end
+            obj = obj@UAV.Interfaces.Sims.Sim(model);
             
             % Acceleration limits
-            acc_max = 4 * obj.phys_model.f_max / obj.phys_model.mass;
-            obj.acc_mag_min = obj.ctrl_model.fr_min * acc_max;
-            obj.acc_mag_max = obj.ctrl_model.fr_max * acc_max;
+            acc_max = 4 * obj.model.f_prop_max / obj.model.mass;
+            obj.acc_mag_min = obj.model.f_rat_min * acc_max;
+            obj.acc_mag_max = obj.model.f_rat_max * acc_max;
             obj.acc_mag_max_sq = obj.acc_mag_max^2;
             
             % Quaternion PID controllers
-            obj.quat_x_pid = obj.quat_pid(obj.phys_model.I_xx, obj.ctrl_model.s_qx);
-            obj.quat_y_pid = obj.quat_pid(obj.phys_model.I_yy, obj.ctrl_model.s_qy);
-            obj.quat_z_pid = obj.quat_pid(obj.phys_model.I_zz, obj.ctrl_model.s_qz);
+            obj.quat_x_pid = PID(...
+                obj.model.qx_kp, obj.model.qx_ki, obj.model.qx_kd, ...
+                -realmax(), +realmax(), obj.f_sim);
+            obj.quat_y_pid = PID(...
+                obj.model.qy_kp, obj.model.qy_ki, obj.model.qy_kd, ...
+                -realmax(), +realmax(), obj.f_sim);
+            obj.quat_z_pid = PID(...
+                obj.model.qz_kp, obj.model.qz_ki, obj.model.qz_kd, ...
+                -realmax(), +realmax(), obj.f_sim);
             obj.quat_sat = false;
             
             % Acceleration PID controller
-            acc_kp = 0;
-            acc_ki = -obj.phys_model.mass * obj.ctrl_model.s_az;
-            acc_kd = 0;
-            obj.f_lin_min = 4 * obj.phys_model.f_max * obj.ctrl_model.fr_min;
-            obj.f_lin_max = 4 * obj.phys_model.f_max * obj.ctrl_model.fr_max;
-            obj.acc_z_pid = PID(acc_kp, acc_ki, acc_kd, obj.f_lin_min, obj.f_lin_max, obj.f_sim);
+            f_lin_min = 4 * obj.model.f_prop_max * obj.model.f_rat_min;
+            f_lin_max = 4 * obj.model.f_prop_max * obj.model.f_rat_max;
+            obj.acc_z_pid = PID(...
+                obj.model.az_kp, obj.model.az_ki, obj.model.az_kd, ...
+                f_lin_min, f_lin_max, obj.f_sim);
         end
         
         function state = update(obj, cmd)
@@ -88,7 +82,7 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             %       acc_z_cmd = Local z-axis acceleration cmd [m/s^2]
             
             % Adjust for gravity
-            acc_cmd_adj = lin_acc_cmd + obj.phys_model.g_vec;
+            acc_cmd_adj = lin_acc_cmd + obj.model.gravity_vec;
             
             % Acceleration limiting
             acc_cmd_adj(3) = clamp(acc_cmd_adj(3), obj.acc_mag_min, obj.acc_mag_max);
@@ -116,7 +110,7 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             end
             
             % Acceleration z-axis cmd
-            acc_cmd_lim = acc_cmd_adj - obj.phys_model.g_vec;
+            acc_cmd_lim = acc_cmd_adj - obj.model.gravity_vec;
             acc_cmd_loc = obj.state.ang_pos.inv().rotate(acc_cmd_lim);
             acc_z_cmd = acc_cmd_loc(3);
         end
@@ -142,7 +136,7 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             tau_cmd(3) = obj.quat_z_pid.update(-quat_err.z, 0, obj.quat_sat);
             
             % Compute force cmd
-            f_ang = obj.phys_model.D_bar_ang * tau_cmd;
+            f_ang = obj.model.D_inv_ang * tau_cmd;
         end
         
         function f_lin = lac(obj, acc_z_cmd)
@@ -154,7 +148,7 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             %       f_lin = Linear prop force vector [N]
             acc_glo = obj.state.lin_acc;
             acc_loc = obj.state.ang_pos.inv().rotate(acc_glo);
-            f_lin = obj.phys_model.D_bar_lin * obj.acc_z_pid.update(acc_z_cmd - acc_loc(3));
+            f_lin = obj.model.D_inv_lin * obj.acc_z_pid.update(acc_z_cmd - acc_loc(3));
         end
         
         function f_prop = frc(obj, f_ang, f_lin)
@@ -171,9 +165,9 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             obj.quat_sat = false;
             for i = 1:4
                 if f_ang(i) > 0
-                    p = (obj.phys_model.f_max - f_lin(i)) / f_ang(i);
+                    p = (obj.model.f_prop_max - f_lin(i)) / f_ang(i);
                 elseif f_ang(i) < 0
-                    p = (obj.phys_model.f_min - f_lin(i)) / f_ang(i);
+                    p = (obj.model.f_prop_min - f_lin(i)) / f_ang(i);
                 else
                     p = 1;
                 end
@@ -185,21 +179,6 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             
             % Combine forces
             f_prop = p_min * f_ang + f_lin;
-        end
-        
-        function pid = quat_pid(obj, I, s)
-            %pid = QUAT_PID(obj, I, s) Make quaternion PID controller
-            %   Inputs:
-            %       I = Axis inertia [kg*m^2]
-            %       s = Feedback triple pole [s^-1]
-            %   Outputs:
-            %       pid = PID controller [PID]
-            kp = 6*I*s^2;
-            ki = -2*I*s^3;
-            kd = -6*I*s;
-            u_min = -realmax();
-            u_max = +realmax();
-            pid = PID(kp, ki, kd, u_min, u_max, obj.f_sim);
         end
     end
 end

@@ -16,21 +16,21 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
     end
     
     methods (Access = public)
-        function obj = Embedded(phys_model, remote, sim_port)
-            %obj = EMBEDDED(phys_model, remote, sim_port)
+        function obj = Embedded(model, remote, sim_port)
+            %obj = EMBEDDED(model, remote, sim_port)
             %   Construct UAV embedded simulator
             %   Inputs:
-            %       phys_model = UAV physical model [UAV.Models.Phys]
+            %       model = UAV model [UAV.Model]
             %       remote = UAV remote controller [UAV.Interfaces.Remote]
             %       sim_port = USB serial port name [char]
             
             % Default args
             if nargin < 3, sim_port = 'COM17'; end
             if nargin < 2, remote = UAV.Interfaces.Remote(); end
-            if nargin < 1, phys_model = UAV.Models.Phys(); end
+            if nargin < 1, model = UAV.Model(); end
             
             % Copy properties
-            obj = obj@UAV.Interfaces.Sims.Sim(phys_model);
+            obj = obj@UAV.Interfaces.Sims.Sim(model);
             obj.remote = remote;
             
             % Set up simulation serial server
