@@ -198,7 +198,7 @@ classdef Log < handle
                 hold on, grid on
                 title(['Throttle [' prop_lbls{i} ']'])
                 xlabel('Time [s]')
-                ylabel('Throttle [0, 1]')
+                ylabel('Throttle')
                 plot(obj.times, thr_props(i, :), 'r-')
                 ylim([0, 1])
             end
