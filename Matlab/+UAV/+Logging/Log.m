@@ -113,10 +113,8 @@ classdef Log < handle
         function plot(obj, name)
             %PLOT Plots log data with respect to time
             %   PLOT(obj, 'ang_pos') Plots orientation
-            %   PLOT(obj, 'ang_vel') Plots angular velocity
             %   PLOT(obj, 'lin_acc') Plots linear acceleration
-            %   PLOT(obj, 'ang_z') Plots heading
-            %   PLOT(obj, 'f_props') Plots propeller forces
+            %   PLOT(obj, 'thr_props') Plots prop throttles
             %   PLOT(obj, 'ang_ctrl') Plots angle control
             %   PLOT(obj, 'all') Plots all items above
             %   PLOT(obj) is shorthand for PLOT(obj, 'all')
@@ -134,13 +132,15 @@ classdef Log < handle
                 end
             else
                 switch name
-                    case 'ang_ctrl', obj.plot_ang_ctrl();
-                    case 'thr_props', obj.plot_thr_props();
+                    case 'ang_pos', obj.plot_ang_pos();
                     case 'lin_acc', obj.plot_lin_acc();
+                    case 'thr_props', obj.plot_thr_props();
+                    case 'ang_ctrl', obj.plot_ang_ctrl();
                     case 'all'
-                        obj.plot_ang_ctrl();
-                        obj.plot_thr_props();
+                        obj.plot_ang_pos();
                         obj.plot_lin_acc();
+                        obj.plot_thr_props();
+                        obj.plot_ang_ctrl();
                     otherwise, error('Invalid name: %s', name)
                 end
             end
@@ -168,23 +168,38 @@ classdef Log < handle
             path = [obj.log_path, obj.file_name, '.mat'];
         end
         
-        function plot_ang_ctrl(obj)
-            %PLOT_ANG_CTRL(obj) Generates angle control plots in new figure
-            obj.make_fig('Angle Control');
-            axis_lbls = {'x', 'y', 'z'};
+        function plot_ang_pos(obj)
+            %PLOT_ANG_POS(obj) Plots quat positions and setpoints
+            obj.make_fig('Angular Position');
+            axis_lbls = {'w', 'x', 'y', 'z'};
             ang_pos = [obj.states.ang_pos];
             ang_pos = [ang_pos.vector()];
             ang_cmd = [obj.cmds.ang_pos];
             ang_cmd = [ang_cmd.vector()];
+            for i = 1:4
+                subplot(2, 2, i)
+                hold on, grid on
+                title(sprintf('Quat-%s', axis_lbls{i}))
+                xlabel('Time [s]')
+                ylabel('Quat')
+                plot(obj.times, ang_cmd(i, :), 'k--')
+                plot(obj.times, ang_pos(i, :)', 'b-')
+                legend('Cmd', 'Val');
+            end
+        end
+        
+        function plot_lin_acc(obj)
+            %PLOT_LIN_ACC(obj) Plots linear acceleration in new figure
+            obj.make_fig('Linear Acceleration');
+            vec_lbls = {'x', 'y', 'z'};
+            lin_acc = [obj.states.lin_acc];
             for i = 1:3
                 subplot(3, 1, i)
                 hold on, grid on
-                title(sprintf('Quat-%s Control', axis_lbls{i}))
+                title(['Accel-' vec_lbls{i}])
                 xlabel('Time [s]')
-                ylabel('Quat')
-                plot(obj.times, ang_cmd(i+1, :), 'k--')
-                plot(obj.times, ang_pos(i+1, :)', 'b-')
-                legend('Cmd', 'Val')
+                ylabel('Accel [m/s^2]')
+                plot(obj.times, lin_acc(i, :), 'b-')
             end
         end
         
@@ -204,18 +219,29 @@ classdef Log < handle
             end
         end
         
-        function plot_lin_acc(obj)
-            %PLOT_LIN_ACC(obj) Plots linear acceleration in new figure
-            obj.make_fig('Linear Acceleration');
-            vec_lbls = {'x', 'y', 'z'};
-            lin_acc = [obj.states.lin_acc];
+        function plot_ang_ctrl(obj)
+            %PLOT_ANG_CTRL(obj) Generates angle control plots in new figure
+            obj.make_fig('Angular Position');
+            axis_lbls = {'x', 'y', 'z'};
+            ang_pos = [obj.states.ang_pos];
+            ang_cmd = [obj.cmds.ang_pos];
+            ang_err = zeros(3, length(ang_pos));
+            for i = 1:size(ang_err, 2)
+                err = ang_cmd(i) \ ang_pos(i);
+                err = err.vector();
+                ang_err(:, i) = err(2:4);
+            end
+            thr_props = [obj.states.thr_props];
+            thr_ang = UAV.Model.N_inv_ang * thr_props;
             for i = 1:3
                 subplot(3, 1, i)
                 hold on, grid on
-                title(['Accel-' vec_lbls{i}])
+                title(sprintf('Quat-%s Control', axis_lbls{i}))
                 xlabel('Time [s]')
-                ylabel('Accel [m/s^2]')
-                plot(obj.times, lin_acc(i, :), 'b-')
+                ylabel('Quat')
+                plot(obj.times, ang_err(i, :), 'b-')
+                plot(obj.times, thr_ang(i, :), 'r-')
+                legend('Error', 'Throttle')
             end
         end
         

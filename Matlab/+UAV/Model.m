@@ -23,6 +23,9 @@ classdef Model < handle
             [-1, +1, +1, +1]];
         N_ang = UAV.Model.N_mat(:, 1:3);
         N_lin = UAV.Model.N_mat(:, 4:4);
+        N_inv = inv(UAV.Model.N_mat);
+        N_inv_ang = UAV.Model.N_inv(1:3, :);
+        N_inv_lin = UAV.Model.N_inv(4:4, :);
     end
     
     properties (SetAccess = protected)
