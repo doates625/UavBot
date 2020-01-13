@@ -11,8 +11,8 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
     properties (Access = protected)
         remote;     % UAV remote controller [UAV.Interfaces.Remote]
         server;     % Serial interface [SerialServer]
-        got_resp;   % Response flag [logical]
-        f_props;    % Prop forces [N]
+        got_thr;    % Response flag [logical]
+        thr_props;  % Prop throttles [0, 1]
     end
     
     methods (Access = public)
@@ -40,8 +40,8 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
             obj.server.add_rx(obj.msg_id_update, 16, @obj.msg_rx_update);
 
             % Init fields
-            obj.got_resp = false;
-            obj.f_props = zeros(4, 1);
+            obj.got_thr = false;
+            obj.thr_props = zeros(4, 1);
         end
         
         function state = update(obj, cmd)
@@ -56,14 +56,14 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
             obj.remote.update(cmd);
             obj.server.tx(obj.msg_id_update);
             
-            % Get force commands
-            obj.got_resp = false;
-            while ~obj.got_resp
+            % Get throttle commands
+            obj.got_thr = false;
+            while ~obj.got_thr
                 obj.server.rx();
             end
             
             % Simulate dynamics
-            state = obj.update_sim(obj.f_props, cmd.enum);
+            state = obj.update_sim(obj.thr_props, cmd.enum);
         end
         
         function delete(obj)
@@ -76,16 +76,9 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
         function msg_tx_update(obj, server)
             %MSG_TX_DATA(obj, server) Packs IMU reading TX message
             %   Data format:
-            %   [00-03] Quat-w [float]
-            %   [04-07] Quat-x [float]
-            %   [08-11] Quat-y [float]
-            %   [12-15] Quat-z [float]
-            %   [16-19] Omega-x [float, rad/s]
-            %   [20-23] Omega-y [float, rad/s]
-            %   [24-27] Omega-z [float, rad/s]
-            %   [28-31] Local accel-x [float, m/s^2]
-            %   [32-35] Local accel-y [float, m/s^2]
-            %   [36-39] Local accel-z [float, m/s^2]
+            %   - Angular position [float, [w; x; y; z]]
+            %   - Angular velocity [float, [x; y; z], rad/s]
+            %   - Local acceleration [float, [x; y; z], m/s^2]
             str = Struct();
             str.set(obj.state.ang_pos.vector(), 'single');
             str.set(obj.state.ang_vel, 'single');
@@ -98,15 +91,12 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
         function msg_rx_update(obj, server)
             %MSG_RX_DATA(obj, server) Unpacks force RX message
             %   Data format:
-            %   [00-03] Force++ [float, N]
-            %   [04-07] Force+- [float, N]
-            %   [08-11] Force-+ [float, N]
-            %   [12-15] Force-- [float, N]
+            %   - Prop throttles [float, [++, +-, -+, --], [0, 1]]
             str = Struct(server.get_rx_data());
             for i = 1:4
-                obj.f_props(i) = str.get('single');
+                obj.thr_props(i) = str.get('single');
             end
-            obj.got_resp = true;
+            obj.got_thr = true;
         end
     end
 end

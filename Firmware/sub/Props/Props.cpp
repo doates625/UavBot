@@ -16,24 +16,20 @@ using CppUtil::clamp;
  */
 namespace Props
 {
-	// Constants
-	const float f_prop_min = 0.00f;
-	const float f_prop_max = 2.46f;
-
-	// ESC Interfaces
+	// ESC interfaces
 	const uint8_t ecs_pins[4] = { 22, 3, 23, 2 };
 	ServoOut escs[4] = 
 	{
-		ServoOut(ecs_pins[0], f_prop_min, f_prop_max),	// M++
-		ServoOut(ecs_pins[1], f_prop_min, f_prop_max),	// M+-
-		ServoOut(ecs_pins[2], f_prop_min, f_prop_max),	// M-+
-		ServoOut(ecs_pins[3], f_prop_min, f_prop_max),	// M--
+		ServoOut(ecs_pins[0], 0.0f, 1.0f),	// Motor [++]
+		ServoOut(ecs_pins[1], 0.0f, 1.0f),	// Motor [+-]
+		ServoOut(ecs_pins[2], 0.0f, 1.0f),	// Motor [-+]
+		ServoOut(ecs_pins[3], 0.0f, 1.0f),	// Motor [--]
 	};
 
-	// Forces Vector
-	Vector<4> f_props;
+	// Throttle vctor
+	Vector<4> thr_props;
 
-	// Init Flag
+	// Init flag
 	bool init_complete = false;
 }
 
@@ -47,7 +43,7 @@ void Props::init()
 		// Enable ESCs
 		for (uint8_t i = 0; i < 4; i++)
 		{
-			escs[i].set_cmd(f_prop_min);
+			escs[i].set_cmd(0.0f);
 			escs[i].set_enabled(true);
 		}
 		Platform::wait(3.0f);
@@ -63,27 +59,27 @@ void Props::init()
 }
 
 /**
- * @brief Sets motor forces
- * @param forces_ Motor forces vector [N]
+ * @brief Sets prop throttles
+ * @param thr Prop throttles vector [0, 1]
  */
-void Props::set_f_props(const Vector<4>& f_props_)
+void Props::set_thr(const Vector<4>& thr)
 {
 	for (uint8_t i = 0; i < 4; i++)
 	{
-		f_props(i) = clamp(f_props_.get(i), f_prop_min, f_prop_max);
+		thr_props(i) = clamp(thr.get(i), 0.0f, 1.0f);
 		#if !defined(SIMULATE_PLANT)
-			escs[i].set_cmd(f_props(i));
+			escs[i].set_cmd(thr_props(i));
 		#endif
 	}
 	#if defined(SIMULATE_PLANT)
-		Simulator::set_f_props(f_props);
+		Simulator::set_thr_props(thr_props);
 	#endif
 }
 
 /**
- * @brief Returns motor forces vector
+ * @brief Returns prop throttles vector [0, 1]
  */
-const Vector<4>& Props::get_f_props()
+const Vector<4>& Props::get_thr()
 {
-	return f_props;
+	return thr_props;
 }

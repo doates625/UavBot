@@ -3,10 +3,9 @@
  * @author Dan Oates (WPI Class of 2020)
  */
 #include "Imu.h"
-#if !defined(SIMULATE_PLANT)
-	#include <Platform.h>
-	#include <BNO055.h>
-#else
+#include <Platform.h>
+#include <BNO055.h>
+#if defined(SIMULATE_PLANT)
 	#include <Simulator.h>
 #endif
 #include <CppUtil.h>
@@ -17,7 +16,6 @@ using CppUtil::sqa;
  */
 namespace Imu
 {
-#if !defined(SIMULATE_PLANT)
 	// I2C bus settings
 	const uint8_t pin_sda = 18;
 	const uint8_t pin_scl = 19;
@@ -30,7 +28,6 @@ namespace Imu
 
 	// Quat calibration offset
 	Quat ang_pos_cal;
-#endif
 
 	// IMU readings
 	Quat ang_pos; 		// Angular position [Quat]
@@ -108,6 +105,7 @@ void Imu::update()
 	ang_pos.y = bno055.get_qua_y();
 	ang_pos.z = bno055.get_qua_z();
 	ang_pos = ang_pos_cal * ang_pos;
+	if (ang_pos.w < 0.0f) ang_pos = -ang_pos;
 	
 	// Update omega
 	bno055.update_gyr();

@@ -17,5 +17,5 @@ namespace Simulator
 	const Quat& get_ang_pos();
 	const Vector<3>& get_ang_vel();
 	const Vector<3>& get_lin_acc();
-	void set_f_props(const Vector<4>& f_props);
+	void set_thr_props(const Vector<4>& thr);
 }

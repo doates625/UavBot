@@ -24,10 +24,10 @@ namespace Simulator
 	bool got_rx = false;
 
 	// State copies
-	Quat ang_pos; 		// Orientation [Quat]
-	Vector<3> ang_vel;	// Angular velocity [rad/s]
-	Vector<3> lin_acc;	// Linear accel [m/s^2]
-	Vector<4> f_props;	// Propeller forces [N]
+	Quat ang_pos; 			// Orientation [Quat]
+	Vector<3> ang_vel;		// Angular velocity [rad/s]
+	Vector<3> lin_acc;		// Linear accel [m/s^2]
+	Vector<4> thr_props;	// Prop throttles
 
 	// Init flag
 	bool init_complete = false;
@@ -89,17 +89,22 @@ const Vector<3>& Simulator::get_lin_acc()
 }
 
 /**
- * @brief Sends propeller forces to simulator
+ * @brief Sends prop throttles to simulator
  */
-void Simulator::set_f_props(const Vector<4>& f_props_)
+void Simulator::set_thr_props(const Vector<4>& thr)
 {
-	f_props = f_props_;
+	thr_props = thr;
 	server.tx(msg_id_update);
 }
 
 /**
  * @brief Unpacks IMU data from simulator
  * @param data Data pointer
+ * 
+ * Data format:
+ * - Angular position [float, [w; x; y; z]]
+ * - Angular velocity [float, [x; y; z], rad/s]
+ * - Local acceleration [float, [x; y; z], m/s^2]
  */
 void Simulator::msg_rx_update(uint8_t* data)
 {
@@ -118,12 +123,15 @@ void Simulator::msg_rx_update(uint8_t* data)
 /**
  * @brief Packs force data for simulator
  * @param data Data pointer
+ * 
+ * Data format:
+ * - Prop throttles [float, [++, +-, -+, --], [0, 1]]
  */
 void Simulator::msg_tx_update(uint8_t* data)
 {
 	Struct str(data);
 	for (uint8_t i = 0; i < 4; i++)
 	{
-		str << f_props(i);
+		str << thr_props(i);
 	}
 }

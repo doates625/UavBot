@@ -11,18 +11,17 @@ classdef Log < handle
     end
     
     properties (SetAccess = protected)
-        file_name;          % File name [char]
-        log_time;           % Time log [s]
-        log_ang_pos;        % Orientation log [w; x; y; z]
-        log_ang_vel;        % Local angular velocity log [rad/s]
-        log_lin_acc;    	% Global linear acceleration log [m/s^2]
-        log_lin_acc_cmd;    % Global linear acceleration cmd log [m/s^2]
-        log_ang_z;          % Heading log [rad]
-        log_ang_z_cmd;      % Heading cmd log [rad]
-        log_f_props;        % Propeller forces log [N]
-        log_length;         % Log length [cnts]
-        trimmed;            % Trimmed flag [logical]
-        comments;           % Comments [cell[char]
+        file_name;      % File name [char]
+        time;           % Time log [s]
+        ang_pos;        % Orientation log [Quat]
+        ang_vel;        % Local angular velocity log [rad/s]
+        lin_acc;    	% Global linear acceleration log [m/s^2]
+        thr_props;      % Prop throttles log [0, 1]
+        ang_pos_cmd;    % Orientation cmd log [Quat]
+        thr_lin_cmd;    % Linear throttle cmd [0, 1]
+        log_length;     % Log length [cnts]
+        trimmed;        % Trimmed flag [logical]
+        comments;       % Comments [cell[char]
     end
     
     methods
@@ -39,17 +38,18 @@ classdef Log < handle
                 
                 % Pre-allocate log arrays
                 n = obj.init_length;
-                obj.log_time = zeros(1, n);
-                obj.log_ang_pos = zeros(4, n);
-                obj.log_ang_vel = zeros(3, n);
-                obj.log_lin_acc = zeros(3, n);
-                obj.log_lin_acc_cmd = zeros(3, n);
-                obj.log_ang_z = zeros(1, n);
-                obj.log_ang_z_cmd = zeros(1, n);
-                obj.log_f_props = zeros(4, n);
-                obj.log_length = 0;
-                
+                obj.time = zeros(1, n);
+                ang_pos(1, n) = Quat();
+                obj.ang_pos = ang_pos;
+                obj.ang_vel = zeros(3, n);
+                obj.lin_acc = zeros(3, n);
+                obj.thr_props = zeros(4, n);
+                ang_pos_cmd(1, n) = Quat();
+                obj.ang_pos_cmd = ang_pos_cmd;
+                obj.thr_lin_cmd = zeros(1, n);
+
                 % Init fields
+                obj.log_length = 0;
                 obj.trimmed = false;
                 obj.comments = {};
             else
@@ -75,14 +75,13 @@ classdef Log < handle
             %       cmd = UAV command [UAV.State.Cmd]
             %       time = Time [s]
             n = obj.log_length + 1;
-            obj.log_time(:, n) = time;
-            obj.log_ang_pos(:, n) = state.ang_pos.vector();
-            obj.log_ang_vel(:, n) = state.ang_vel;
-            obj.log_lin_acc(:, n) = state.lin_acc;
-            obj.log_lin_acc_cmd(:, n) = cmd.lin_acc;
-            obj.log_ang_z(:, n) = state.ang_z;
-            obj.log_ang_z_cmd(:, n) = cmd.ang_z;
-            obj.log_f_props(:, n) = state.f_props;
+            obj.time(n) = time;
+            obj.ang_pos(n) = state.ang_pos;
+            obj.ang_vel(:, n) = state.ang_vel;
+            obj.lin_acc(:, n) = state.lin_acc;
+            obj.thr_props(:, n) = state.thr_props;
+            obj.ang_pos_cmd(n) = cmd.ang_pos;
+            obj.thr_lin_cmd(n) = cmd.thr_lin;
             obj.log_length = n;
         end
         
@@ -90,31 +89,35 @@ classdef Log < handle
             %obj = TRIM(obj) Trims empty pre-allocated space from log vectors
             if ~obj.trimmed
                 n = obj.log_length;
-                obj.log_time = obj.log_time(:, 1:n);
-                obj.log_ang_pos = obj.log_ang_pos(:, 1:n);
-                obj.log_ang_vel = obj.log_ang_vel(:, 1:n);
-                obj.log_lin_acc = obj.log_lin_acc(:, 1:n);
-                obj.log_lin_acc_cmd = obj.log_lin_acc_cmd(:, 1:n);
-                obj.log_ang_z = obj.log_ang_z(:, 1:n);
-                obj.log_ang_z_cmd = obj.log_ang_z_cmd(:, 1:n);
-                obj.log_f_props = obj.log_f_props(:, 1:n);
+                obj.time = obj.time(1:n);
+                obj.ang_pos = obj.ang_pos(1:n);
+                obj.ang_vel = obj.ang_vel(:, 1:n);
+                obj.lin_acc = obj.lin_acc(:, 1:n);
+                obj.thr_props = obj.thr_props(:, 1:n);
+                obj.ang_pos_cmd = obj.ang_pos_cmd(1:n);
+                obj.thr_lin_cmd = obj.thr_lin_cmd(1:n);
                 obj.trimmed = true;
             end
         end
         
         function obj = crop(obj, t_min, t_max)
             %obj = CROP(obj, t_min, t_max) Crops log in time to range [t_min, t_max]
+            
+            % Compute endpoints
             i_min = find(obj.log_time > t_min, 1, 'first');
             i_max = find(obj.log_time > t_max, 1, 'first');
-            obj.log_time = obj.log_time(:, i_min:i_max);
-            obj.log_ang_pos = obj.log_ang_pos(:, i_min:i_max);
-            obj.log_ang_vel = obj.log_ang_vel(:, i_min:i_max);
-            obj.log_lin_acc = obj.log_lin_acc(:, i_min:i_max);
-            obj.log_lin_acc_cmd = obj.log_lin_acc_cmd(:, i_min:i_max);
-            obj.log_ang_z = obj.log_ang_z(:, i_min:i_max);
-            obj.log_ang_z_cmd = obj.log_ang_z_cmd(:, i_min:i_max);
-            obj.log_f_props = obj.log_f_props(:, i_min:i_max);
-            obj.log_length = length(obj.log_time);
+            
+            % Trim to endpoints
+            obj.time = obj.time(i_min:i_max);
+            obj.ang_pos = obj.ang_pos(i_min:i_max);
+            obj.ang_vel = obj.ang_vel(:, i_min:i_max);
+            obj.lin_acc = obj.lin_acc(:, i_min:i_max);
+            obj.thr_props = obj.thr_props(:, i_min:i_max);
+            obj.ang_pos_cmd = obj.ang_pos_cmd(i_min:i_max);
+            obj.thr_lin_cmd = obj.thr_lin_cmd(i_min:i_max);
+            
+            % Update log length
+            obj.log_length = length(obj.time);
         end
         
         function obj = cmt(obj, comment)
@@ -151,19 +154,13 @@ classdef Log < handle
                 end
             else
                 switch name
-                    case 'ang_pos', obj.plot_ang_pos();
-                    case 'ang_vel', obj.plot_ang_vel();
-                    case 'lin_acc', obj.plot_lin_acc();
-                    case 'ang_z', obj.plot_ang_z();
-                    case 'f_props', obj.plot_f_props();
                     case 'ang_ctrl', obj.plot_ang_ctrl();
+                    case 'thr_props', obj.plot_thr_props();
+                    case 'lin_acc', obj.plot_lin_acc();
                     case 'all'
-                        obj.plot_ang_pos();
-                        obj.plot_ang_vel();
-                        obj.plot_lin_acc();
-                        obj.plot_ang_z();
-                        obj.plot_f_props();
                         obj.plot_ang_ctrl();
+                        obj.plot_thr_props();
+                        obj.plot_lin_acc();
                     otherwise, error('Invalid name: %s', name)
                 end
             end
@@ -181,38 +178,42 @@ classdef Log < handle
             path = [obj.log_path, obj.file_name, '.mat'];
         end
         
-        function plot_ang_pos(obj)
-            %PLOT_ANG_POS(obj) Plots angular position in new figure
-            obj.make_fig('Orientation');
-            quat_lbls = {'w', 'x', 'y', 'z'};
-            for i = 1:4
-                subplot(2, 2, i)
-                hold on, grid on
-                title(['Quat-' quat_lbls{i}])
-                xlabel('Time [s]')
-                ylabel('Quat')
-                plot(obj.log_time, obj.log_ang_pos(i, :), 'b-')
-                ylim([-1, +1])
-            end
-        end
-        
-        function plot_ang_vel(obj)
-            %PLOT_ANG_VEL(obj) Plots angular velocity in new figure
-            obj.make_fig('Angular Velocity');
-            vec_lbls = {'x', 'y', 'z'};
+        function plot_ang_ctrl(obj)
+            %PLOT_ANG_CTRL(obj) Generates angle control plots in new figure
+            obj.make_fig('Angle Control');
+            axis_lbls = {'x', 'y', 'z'};
+            ang_pos_ = obj.ang_pos.vector();
+            ang_pos_cmd_ = obj.ang_pos_cmd.vector();
             for i = 1:3
                 subplot(3, 1, i)
                 hold on, grid on
-                title(['Velocity-' vec_lbls{i}])
+                title(sprintf('Quat-%s Control', axis_lbls{i}))
                 xlabel('Time [s]')
-                ylabel('Velocity [rad/s]')
-                plot(obj.log_time, obj.log_ang_vel(i, :), 'b-')
+                ylabel('Quat')
+                plot(obj.time, ang_pos_cmd_(i+1, :), 'k--')
+                plot(obj.time, ang_pos_(i+1, :)', 'b-')
+                legend('Cmd', 'Val')
+            end
+        end
+        
+        function plot_thr_props(obj)
+            %PLOT_THR_PROPS(obj) Plots prop throttles in new figure
+            obj.make_fig('Propeller Throttles');
+            prop_lbls = {'++', '+-', '-+', '--'};
+            for i = 1:4
+                subplot(2, 2, i)
+                hold on, grid on
+                title(['Throttle [' prop_lbls{i} ']'])
+                xlabel('Time [s]')
+                ylabel('Throttle [0, 1]')
+                plot(obj.time, obj.thr_props(i, :), 'r-')
+                ylim([0, 1])
             end
         end
         
         function plot_lin_acc(obj)
             %PLOT_LIN_ACC(obj) Plots linear acceleration in new figure
-            obj.make_fig('Linear Acceleration Control');
+            obj.make_fig('Linear Acceleration');
             vec_lbls = {'x', 'y', 'z'};
             for i = 1:3
                 subplot(3, 1, i)
@@ -220,55 +221,7 @@ classdef Log < handle
                 title(['Accel-' vec_lbls{i}])
                 xlabel('Time [s]')
                 ylabel('Accel [m/s^2]')
-                plot(obj.log_time, obj.log_lin_acc_cmd(i, :), 'k--')
-                plot(obj.log_time, obj.log_lin_acc(i, :), 'b-')
-                legend('Cmd', 'Val')
-            end
-        end
-        
-        function plot_ang_z(obj)
-            %PLOT_ANG_Z(obj) Plot heading in new figure
-            obj.make_fig('Heading Control');
-            hold on, grid on
-            title('Heading Control')
-            xlabel('Time [s]')
-            ylabel('Heading [rad]')
-            plot(obj.log_time, obj.log_ang_z_cmd, 'k--')
-            plot(obj.log_time, obj.log_ang_z, 'b-')
-            ylim([-pi, +pi])
-            legend('Cmd', 'Val')
-        end
-        
-        function plot_f_props(obj)
-            %PLOT_F_PROPS(obj) Plots prop forces in new figure
-            obj.make_fig('Propeller Forces');
-            model = UAV.Model();
-            prop_lbls = {'++', '+-', '-+', '--'};
-            for i = 1:4
-                subplot(2, 2, i)
-                hold on, grid on
-                title(['Force [' prop_lbls{i} ']'])
-                xlabel('Time [s]')
-                ylabel('Force [N]')
-                plot(obj.log_time, obj.log_f_props(i, :), 'r-')
-                ylim([model.f_prop_min, model.f_prop_max])
-            end
-        end
-        
-        function plot_ang_ctrl(obj)
-            %PLOT_ANG_CTRL(obj) Generates angle control plots in new figure
-            obj.make_fig('Angle Control');
-            D_mat_ang = UAV.Model().D_mat_ang;
-            tau_est = D_mat_ang * obj.log_f_props;
-            axis_lbls = {'x', 'y', 'z'};
-            for i = 1:3
-                subplot(3, 1, i)
-                hold on, grid on
-                title(sprintf('Quat-%s Control', axis_lbls{i}))
-                xlabel('Time [s]')
-                plot(obj.log_time, obj.log_ang_pos(i+1, :), 'b-')
-                plot(obj.log_time, tau_est(i, :), 'r-')
-                legend('Quaternion', 'Torque [N*m]')
+                plot(obj.time, obj.lin_acc(i, :), 'b-')
             end
         end
         

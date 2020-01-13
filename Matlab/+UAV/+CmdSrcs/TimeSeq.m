@@ -4,8 +4,8 @@ classdef TimeSeq < UAV.CmdSrcs.CmdSrc
     
     properties (SetAccess = protected)
         time_cmds;      % Time of cmds [s]
-        lin_acc_cmds;   % Global linear acceleration cmds [m/s^2]
-        ang_z_cmds;     % Heading cmds [rad]
+        ang_pos_cmds;   % Angular position cmds [Quat]
+        thr_lin_cmds;   % Linear throttle cmds [0, 1]
     end
     properties (Access = protected)
         i_cmd;   % Cmd index [cnts]
@@ -13,48 +13,49 @@ classdef TimeSeq < UAV.CmdSrcs.CmdSrc
     end
     
     methods (Access = public)
-        function obj = TimeSeq(time_cmds, lin_acc_cmds, ang_z_cmds)
+        function obj = TimeSeq(model, time_cmds, ang_pos_cmds, thr_lin_cmds)
             %TIMESEQ Construct command time sequence
-            %   obj = TIMESEQ(time_cmds, lin_acc_cmds, ang_z_cmds)
+            %   obj = TIMESEQ(model, time_cmds, ang_pos_cmds, thr_lin_cmds)
             %       Construct custom sequence
             %       Inputs:
             %           time_cmds = Time of cmds [s]
-            %           lin_acc_cmds = Global linear acceleration cmds [m/s^2]
-            %           ang_z_cmds = Heading cmds [rad]
-            %   obj = TIMESEQ() Construct default sequence
+            %           ang_pos_cmds = Angular position cmds [Quat]
+            %           thr_lin_cmds = Linear throttle cmds [0, 1]
+            %   obj = TIMESEQ(model) Construct default sequence with given model
+            %   obj = TIMESEQ() Construct default sequence with default model
             
-            % Default args
-            if nargin == 0
+            % Superconstructor
+            if nargin < 1, model = UAV.Model(); end
+            obj = obj@UAV.CmdSrcs.CmdSrc(model);
+            
+            % Default commands
+            if nargin < 4
                 % Timesteps
-                f_step = 50.0;
-                t_step = 1 / f_step;
-                time_cmds = 0:t_step:10;
+                time_del = 1 / model.f_ctrl;
+                time_cmds = 0:time_del:10;
                 n = length(time_cmds);
                 
-                % Acceleration cmds
-                lin_acc_cmds = zeros(3, n);
-                lin_acc_cmds(1, time_cmds >= 0) = +5;
-                lin_acc_cmds(1, time_cmds >= 2) = -5;
-                lin_acc_cmds(1, time_cmds >= 4) = 0;
-                lin_acc_cmds(2, time_cmds >= 4) = +5;
-                lin_acc_cmds(2, time_cmds >= 6) = -5;
-                lin_acc_cmds(2, time_cmds >= 8) = 0;
-                lin_acc_cmds(3, time_cmds >= 3) = +5;
-                lin_acc_cmds(3, time_cmds >= 5) = -5;
-                lin_acc_cmds(3, time_cmds >= 7) = 0;
+                % Orientation cmds
+                ang_z = zeros(1, n);
+                ang_z(time_cmds >= 0) = time_cmds;
+                ang_y = zeros(1, n);
+                ang_y(time_cmds >= 0) = +deg2rad(20);
+                ang_y(time_cmds >= 2) = -deg2rad(20);
+                ang_y(time_cmds >= 4) = 0;
+                ang_x = zeros(1, n);
+                ang_x(time_cmds >= 4) = +deg2rad(20);
+                ang_x(time_cmds >= 6) = -deg2rad(20);
+                ang_x(time_cmds >= 8) = 0;
+                ang_pos_cmds = obj.eul_to_quat(ang_z, ang_y, ang_x);
                 
-                % Heading cmds
-                ang_z_cmds = zeros(1, n);
-                ang_z_cmds(time_cmds >= 0) = time_cmds;
-                ang_z_cmds = wrap(ang_z_cmds, -pi, +pi);
-            elseif nargin ~= 3
-                error('Invalid nargin.')
+                % Throttle cmd
+                thr_lin_cmds = obj.model.thr_max * ones(size(time_cmds));
             end
             
             % Copy args
             obj.time_cmds = time_cmds;
-            obj.lin_acc_cmds = lin_acc_cmds;
-            obj.ang_z_cmds = ang_z_cmds;
+            obj.ang_pos_cmds = ang_pos_cmds;
+            obj.thr_lin_cmds = thr_lin_cmds;
             obj.i_cmd = 1;
             obj.n_cmd = length(time_cmds);
         end
@@ -64,10 +65,17 @@ classdef TimeSeq < UAV.CmdSrcs.CmdSrc
             %   Outputs:
             %       cmd = UAV command [UAV.Cmd]
             %       time = Time [s]
-            lin_acc = obj.lin_acc_cmds(:, obj.i_cmd);
-            ang_z = obj.ang_z_cmds(obj.i_cmd);
-            cmd = UAV.State.Cmd(lin_acc, ang_z, UAV.State.Enum.Enabled);
+            
+            % Form command
+            ang_pos = obj.ang_pos_cmds(obj.i_cmd);
+            thr_lin = obj.thr_lin_cmds(obj.i_cmd);
+            enum = UAV.State.Enum.Enabled;
+            cmd = UAV.State.Cmd(ang_pos, thr_lin, enum);
+            
+            % Form time
             time = obj.time_cmds(obj.i_cmd);
+            
+            % Increment counter
             obj.i_cmd = obj.i_cmd + 1;
         end
         

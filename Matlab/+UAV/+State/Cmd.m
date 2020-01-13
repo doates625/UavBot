@@ -3,20 +3,21 @@ classdef Cmd < handle
     %   Author: Dan Oates (WPI Class of 2020)
     
     properties (SetAccess = protected)
-        lin_acc;    % Global linear acceleration cmd [m/s^2]
-        ang_z;      % Heading cmd [rad]
+        ang_pos;    % Orientation cmd [Quat]
+        thr_lin;    % Linear throttle cmd [0, 1]
         enum;       % State machine enum cmd [UAV.State.Enum]
     end
     
     methods
-        function obj = Cmd(lin_acc, ang_z, enum)
-            %obj = CMD(lin_acc, ang_z, enum) Construct UAV command
+        function obj = Cmd(ang_pos, thr_lin, enum)
+            %obj = CMD(ang_pos, thr_lin, enum) Construct UAV command
             %   Inputs:
-            %       lin_acc = Global linear acceleration cmd [m/s^2]
-            %       ang_z = Heading cmd [rad]
+            %       ang_pos = Orientation cmd [Quat]
+            %       thr_lin = Linear throttle cmd [0, 1]
             %       end = State machine enum cmd [UAV.State.Enum]
-            obj.lin_acc = lin_acc;
-            obj.ang_z = ang_z;
+            %   Arg ang_pos is formatted to be positive-w
+            obj.ang_pos = pos_w(ang_pos);
+            obj.thr_lin = thr_lin;
             obj.enum = enum;
         end
     end

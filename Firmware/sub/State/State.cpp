@@ -28,14 +28,14 @@ void State::update()
 		// Enabled state
 		case state_enabled:
 			Controller::update();
-			Props::set_f_props(Controller::get_f_props());
+			Props::set_thr(Controller::get_thr_props());
 			state = Imu::is_flipped() ?
 				state_failed : (state_t)Bluetooth::get_state_cmd();
 			break;
 		
 		// Disabled state
 		case state_disabled:
-			Props::set_f_props(Vector<4>());
+			Props::set_thr(Vector<4>());
 			state = (state_t)Bluetooth::get_state_cmd();
 			if (state == state_enabled)
 			{
@@ -46,7 +46,7 @@ void State::update()
 
 		// Failed state (terminal)
 		case state_failed:
-			Props::set_f_props(Vector<4>());
+			Props::set_thr(Vector<4>());
 			break;
 	}
 }

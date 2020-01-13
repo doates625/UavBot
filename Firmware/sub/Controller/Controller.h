@@ -19,5 +19,5 @@ namespace Controller
 	void init();
 	void update();
 	void reset();
-	const Vector<4>& get_f_props();
+	const Vector<4>& get_thr_props();
 }

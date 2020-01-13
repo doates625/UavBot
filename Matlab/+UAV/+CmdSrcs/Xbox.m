@@ -2,43 +2,51 @@ classdef Xbox < UAV.CmdSrcs.CmdSrc
     %XBOX Xbox game controller for UAV piloting
     %   Author: Dan Oates (WPI Class of 2020)
     
+    properties (SetAccess = protected)
+        vel_z_max;  % Max yaw rate [rad/s]
+        ang_y_max;  % Max pitch angle [rad]
+        ang_x_max;  % Max roll angle [rad]
+    end
+    
     properties (Access = protected)
         xbox;       % Xbox controller [Xbox360]
-        acc_h_max;  % Max horizontal acceleration [m/s^2]
-        acc_v_max;  % Max vertical acceleration [m/s^2]
-        wz_max;     % Max heading cmd rate [rad/s]
-        tz_int;     % Angle cmd integrator [Integrator]
-        state_enum; % State machine enum cmd [UAV.State.Enum]
+        ang_z_int;  % Yaw cmd integrator [Integrator]
+        thr_range;  % Throttle range [0, 1]
+        enum_cmd;   % State machine enum cmd [UAV.State.Enum]
         timer;      % Timer object [Timer]
         first_get;  % First get flag [logical]
     end
     
     methods (Access = public)
-        function obj = Xbox(xbox_id, xbox_dz, acc_h_max, acc_v_max, wz_max)
-            %obj = XBOX(xbox_id, xbox_dz, acc_h_max, acc_v_max, wz_max)
+        function obj = Xbox(model, vel_z_max, ang_y_max, ang_x_max, xbox_id, xbox_dz)
+            %obj = XBOX(vel_z_max, ang_y_max, ang_x_max, xbox_id, xbox_dz, model)
             %   Construct Xbox UAV controller
             %   Inputs:
+            %       model = UAV model [UAV.Model]
+            %       vel_z_max = Max yaw rate [rad/s]
+            %       ang_y_max = Max pitch angle [rad]
+            %       ang_x_max = Max roll angle [rad]
             %       xbox_id = Joystick ID [1-4]
             %       xbox_dz = Joystick dead zone [0-1]
-            %       acc_h_max = Max horizontal acceleration [m/s^2]
-            %       acc_v_max = Max vertical acceleration [m/s^2]
-            %       wz_max = Max heading cmd rate [rad/s]
             
             % Default args
-            if nargin < 5, wz_max = pi/4; end
-            if nargin < 4, acc_v_max = 0.5; end
-            if nargin < 3, acc_h_max = 2.0; end
-            if nargin < 2, xbox_dz = 0.075; end
-            if nargin < 1, xbox_id = 1; end
+            if nargin < 6, xbox_dz = 0.075; end
+            if nargin < 5, xbox_id = 1; end
+            if nargin < 4, ang_x_max = deg2rad(20); end
+            if nargin < 3, ang_y_max = deg2rad(20); end
+            if nargin < 2, vel_z_max = pi/4; end
+            if nargin < 1, model = UAV.Model(); end
             
             % Init properties
             import('UAV.State.Enum');
+            obj = obj@UAV.CmdSrcs.CmdSrc(model);
+            obj.vel_z_max = vel_z_max;
+            obj.ang_y_max = ang_y_max;
+            obj.ang_x_max = ang_x_max;
             obj.xbox = Xbox360(xbox_id, xbox_dz);
-            obj.acc_h_max = acc_h_max;
-            obj.acc_v_max = acc_v_max;
-            obj.wz_max = wz_max;
-            obj.tz_int = Integrator();
-            obj.state_enum = Enum.Disabled;
+            obj.ang_z_int = Integrator();
+            obj.thr_range = model.thr_max - model.thr_min;
+            obj.enum_cmd = Enum.Disabled;
             obj.timer = Timer();
             obj.first_get = true;
         end
@@ -49,30 +57,30 @@ classdef Xbox < UAV.CmdSrcs.CmdSrc
             %       cmd = UAV command [UAV.State.Cmd]
             %       time = Time [s]
             
-            % Parse heading command
-            wz = -obj.wz_max * obj.xbox.axis('Rx');
-            ang_z = obj.tz_int.update(wz);
-            
-            % Parse linear acceleration command
-            lin_acc = zeros(3, 1);
-            lin_acc(1) = -obj.acc_h_max * obj.xbox.axis('Ly');
-            lin_acc(2) = -obj.acc_h_max * obj.xbox.axis('Lx');
-            lin_acc(3) = -obj.acc_v_max * obj.xbox.axis('Trig');
-            lin_acc = Quat([0; 0; 1], ang_z).rotate(lin_acc);
+            % Parse orientation cmd
+            vel_z = obj.vel_z_max * -obj.xbox.axis('Rx');
+            ang_z = obj.ang_z_int.update(vel_z);
+            ang_y = obj.ang_y_max * -obj.xbox.axis('Ly');
+            ang_x = obj.ang_x_max * +obj.xbox.axis('Lx');
+            ang_pos = obj.eul_to_quat(ang_z, ang_y, ang_x);
+           
+            % Parse linear throttle cmd
+            thr_lin = obj.model.thr_min + obj.thr_range * -obj.xbox.axis('Trig');
+            thr_lin = clamp(thr_lin, obj.model.thr_min, obj.model.thr_max);
             
             % Parse state command
             import('UAV.State.Enum');
             if obj.xbox.btn('B')
-                obj.state_enum = Enum.Disabled;
+                obj.enum_cmd = Enum.Disabled;
             elseif obj.xbox.btn('Start')
-                if obj.state_enum ~= Enum.Enabled
-                    obj.tz_int.set(0);
+                if obj.enum_cmd ~= Enum.Enabled
+                    obj.ang_z_int.set(0);
                 end
-                obj.state_enum = Enum.Enabled;
+                obj.enum_cmd = Enum.Enabled;
             end
             
             % Form command
-            cmd = UAV.State.Cmd(lin_acc, ang_z, obj.state_enum);
+            cmd = UAV.State.Cmd(ang_pos, thr_lin, obj.enum_cmd);
             
             % Get time
             if obj.first_get

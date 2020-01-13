@@ -31,8 +31,8 @@ classdef Remote < UAV.Interfaces.Interface
             % Set up serial server
             bluetooth_ = make_bluetooth(bt_name);
             obj.server = SerialServer(bluetooth_, obj.start_byte);
-            obj.server.add_tx(obj.msg_id_state, 0, @obj.msg_tx_state);
-            obj.server.add_tx(obj.msg_id_update, 16, @obj.msg_tx_update);
+            obj.server.add_tx(obj.msg_id_state, 1, @obj.msg_tx_state);
+            obj.server.add_tx(obj.msg_id_update, 20, @obj.msg_tx_update);
             obj.server.add_rx(obj.msg_id_update, 57, @obj.msg_rx_update);
             
             % Init fields
@@ -74,19 +74,30 @@ classdef Remote < UAV.Interfaces.Interface
     methods (Access = protected)
         function msg_tx_state(obj, server)
             %MSG_TX_STATE(obj, server) Packs State TX message
+            %   Data format:
+            %   - State enum cmd [uint8]
             server.set_tx_data(obj.uav_cmd.enum);
         end
         
         function msg_tx_update(obj, server)
             %MSG_TX_UPDATE(obj, server) Packs Update TX message
+            %   Data format:
+            %   - Angular position cmd [float, [w; x; y; z]]
+            %   - Linear throttle cmd [float]
             str = Struct();
-            str.set(obj.uav_cmd.lin_acc, 'single');
-            str.set(obj.uav_cmd.ang_z, 'single');
+            str.set(obj.uav_cmd.ang_pos.vector(), 'single');
+            str.set(obj.uav_cmd.thr_lin, 'single');
             server.set_tx_data(str.get_buffer());
         end
         
         function msg_rx_update(obj, server)
-            %MSG_RX_UPDAT(obj, server) Unpacks Update RX message
+            %MSG_RX_UPDATE(obj, server) Unpacks Update RX message
+            %   Data format:
+            %   - Angular position [float, [w; x; y; z]]
+            %   - Angular velocity [float, [x; y; z], rad/s]
+            %   - Local acceleration [float, [x; y; z], m/s^2]
+            %   - Prop throttles [float, [++, +-, -+, --], [0, 1]]
+            %   - State enum cmd [uint8]
 
             % Struct unpacker
             str = Struct(server.get_rx_data());
@@ -99,7 +110,7 @@ classdef Remote < UAV.Interfaces.Interface
             ang_pos = Quat(arr(1:4));
             ang_vel = arr(5:7);
             lin_acc = ang_pos.rotate(arr(8:10));
-            f_props = arr(11:14);
+            thr_props = arr(11:14);
             
             % Unpack enum
             import('UAV.State.Enum');
@@ -110,8 +121,8 @@ classdef Remote < UAV.Interfaces.Interface
                 case Enum.Failed, enum = Enum.Failed;
             end
             
-            % Set state and response flag
-            obj.state = UAV.State.State(ang_pos, ang_vel, lin_acc, f_props, enum);
+            % Update state and response flag
+            obj.state = UAV.State.State(ang_pos, ang_vel, lin_acc, thr_props, enum);
             obj.got_state = true;
         end
     end

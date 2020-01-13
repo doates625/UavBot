@@ -32,9 +32,9 @@ namespace Bluetooth
 
 	// Controller commands
 	uint8_t state_cmd = State::state_disabled;
-	Vector<3> lin_acc_cmd;
-	float ang_z_cmd = 0.0f;
-	bool got_cmds = false;
+	Quat ang_pos_cmd;
+	float thr_lin_cmd;
+	bool got_cmds = false;	
 
 	// Init flag
 	bool init_complete = false;
@@ -52,7 +52,7 @@ void Bluetooth::init()
 
 		// Configure server
 		server.add_rx(msg_id_state, 1, msg_rx_state);
-		server.add_rx(msg_id_update, 16, msg_rx_update);
+		server.add_rx(msg_id_update, 20, msg_rx_update);
 		server.add_tx(msg_id_update, 57, msg_tx_update);
 
 		// Set init flag
@@ -77,39 +77,31 @@ bool Bluetooth::update()
  */
 uint8_t Bluetooth::get_state_cmd()
 {
-	#if defined(STUB_BLUETOOTH)
-		state_cmd = State::state_enabled;
-	#endif
 	return state_cmd;
 }
 
 /**
- * @brief Returns global linear acceleration cmd [m/s^2]
+ * @brief Returns orientation cmd
  */
-const Vector<3>& Bluetooth::get_lin_acc_cmd()
+const Quat& Bluetooth::get_ang_pos_cmd()
 {
-	#if defined(STUB_BLUETOOTH)
-		lin_acc_cmd(0) = 0.0f;
-		lin_acc_cmd(1) = 0.0f;
-		lin_acc_cmd(2) = -10.0f;
-	#endif
-	return lin_acc_cmd;
+	return ang_pos_cmd;
 }
 
 /**
- * @brief Returns heading cmd [rad]
+ * @brief 
  */
-float Bluetooth::get_ang_z_cmd()
+float Bluetooth::get_thr_lin_cmd()
 {
-	#if defined(STUB_BLUETOOTH)
-		heading_cmd = 0.0f;
-	#endif
-	return ang_z_cmd;
+	return thr_lin_cmd;
 }
 
 /**
  * @brief Gets UAV state command
  * @param data Data pointer
+ * 
+ * Data format:
+ * - State command [uint8_t]
  */
 void Bluetooth::msg_rx_state(uint8_t* data)
 {
@@ -119,16 +111,21 @@ void Bluetooth::msg_rx_state(uint8_t* data)
 /**
  * @brief Gets teleop commands from remote and sends state back
  * @param data Data pointer
+ * 
+ * Data format:
+ * - Angular position cmd [float, [w; x; y; z]]
+ * - Linear throttle cmd [float]
  */
 void Bluetooth::msg_rx_update(uint8_t* data)
 {
 	// Copy cmds with ISRs disabled
 	Struct str(data);
 	Platform::disable_interrupts();
-	str >> lin_acc_cmd(0);
-	str >> lin_acc_cmd(1);
-	str >> lin_acc_cmd(2);
-	str >> ang_z_cmd;
+	str >> ang_pos_cmd.w;
+	str >> ang_pos_cmd.x;
+	str >> ang_pos_cmd.y;
+	str >> ang_pos_cmd.z;
+	str >> thr_lin_cmd;
 	Platform::enable_interrupts();
 
 	// Transmit state response
@@ -139,7 +136,14 @@ void Bluetooth::msg_rx_update(uint8_t* data)
 /**
  * @brief Transmits state data to remote
  * @param data Data pointer
- */ 
+ * 
+ * Data format:
+ * - Angular position [float, [w; x; y; z]]
+ * - Angular velocity [float, [x; y; z], rad/s]
+ * - Local acceleration [float, [x; y; z], m/s^2]
+ * - Prop throttles [float, [++, +-, -+, --], [0, 1]]
+ * - State command [uint8]
+ */
 void Bluetooth::msg_tx_update(uint8_t* data)
 {
 	// Copy state data with ISRs disabled
@@ -147,7 +151,7 @@ void Bluetooth::msg_tx_update(uint8_t* data)
 	Vector<4> ang_pos = Imu::get_ang_pos();
 	Vector<3> ang_vel = Imu::get_ang_vel();
 	Vector<3> lin_acc = Imu::get_lin_acc();
-	Vector<4> f_props = Props::get_f_props();
+	Vector<4> thr_props = Props::get_thr();
 	state_t state = State::get();
 	Platform::enable_interrupts();
 
@@ -156,6 +160,6 @@ void Bluetooth::msg_tx_update(uint8_t* data)
 	for (uint8_t i = 0; i < 4; i++) str << ang_pos(i);
 	for (uint8_t i = 0; i < 3; i++) str << ang_vel(i);
 	for (uint8_t i = 0; i < 3; i++) str << lin_acc(i);
-	for (uint8_t i = 0; i < 4; i++) str << f_props(i);
+	for (uint8_t i = 0; i < 4; i++) str << thr_props(i);
 	str << (uint8_t)state;
 }

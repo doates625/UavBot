@@ -11,12 +11,7 @@
  */
 namespace Props
 {
-	// Constants
-	extern const float f_prop_min;	// Min prop force [N]
-	extern const float f_prop_max;	// Max prop force [N]
-
-	// Functions
 	void init();
-	void set_f_props(const Vector<4>& f_props_);
-	const Vector<4>& get_f_props();
+	void set_thr(const Vector<4>& thr);
+	const Vector<4>& get_thr();
 }

@@ -7,7 +7,7 @@ function log = run_ml_ts()
 clc
 uav = UAV.Interfaces.Sims.Matlab();
 cmd_src = UAV.CmdSrcs.TimeSeq();
-run_gui = false;
+run_gui = true;
 log = UAV.Scripts.run(uav, cmd_src, run_gui);
 
 end
