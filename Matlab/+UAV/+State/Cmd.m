@@ -16,6 +16,13 @@ classdef Cmd < handle
             %       thr_lin = Linear throttle cmd [0, 1]
             %       end = State machine enum cmd [UAV.State.Enum]
             %   Arg ang_pos is formatted to be positive-w
+            
+            % Default args
+            if nargin < 3, enum = UAV.State.Enum.Disabled; end
+            if nargin < 2, thr_lin = 0.0; end
+            if nargin < 1, ang_pos = Quat(); end
+            
+            % Copy components
             obj.ang_pos = pos_w(ang_pos);
             obj.thr_lin = thr_lin;
             obj.enum = enum;
