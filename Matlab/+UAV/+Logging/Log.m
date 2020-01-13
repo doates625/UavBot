@@ -11,17 +11,13 @@ classdef Log < handle
     end
     
     properties (SetAccess = protected)
-        file_name;      % File name [char]
-        time;           % Time log [s]
-        ang_pos;        % Orientation log [Quat]
-        ang_vel;        % Local angular velocity log [rad/s]
-        lin_acc;    	% Global linear acceleration log [m/s^2]
-        thr_props;      % Prop throttles log [0, 1]
-        ang_pos_cmd;    % Orientation cmd log [Quat]
-        thr_lin_cmd;    % Linear throttle cmd [0, 1]
-        log_length;     % Log length [cnts]
-        trimmed;        % Trimmed flag [logical]
-        comments;       % Comments [cell[char]
+        file_name;  % File name [char]
+        states;     % States log [UAV.State.State]
+        cmds;       % Commands log [UAV.State.Cmd]
+        times;      % Time log [s]
+        log_length; % Log length [cnts]
+        trimmed;    % Trimmed flag [logical]
+        comments;   % Comments [cell[char]
     end
     
     methods
@@ -38,15 +34,11 @@ classdef Log < handle
                 
                 % Pre-allocate log arrays
                 n = obj.init_length;
-                obj.time = zeros(1, n);
-                ang_pos(1, n) = Quat();
-                obj.ang_pos = ang_pos;
-                obj.ang_vel = zeros(3, n);
-                obj.lin_acc = zeros(3, n);
-                obj.thr_props = zeros(4, n);
-                ang_pos_cmd(1, n) = Quat();
-                obj.ang_pos_cmd = ang_pos_cmd;
-                obj.thr_lin_cmd = zeros(1, n);
+                states(1, n) = UAV.State.State();
+                cmds(1, n) = UAV.State.Cmd();
+                obj.states = states;
+                obj.cmds = cmds;
+                obj.times = zeros(1, n);
 
                 % Init fields
                 obj.log_length = 0;
@@ -75,13 +67,9 @@ classdef Log < handle
             %       cmd = UAV command [UAV.State.Cmd]
             %       time = Time [s]
             n = obj.log_length + 1;
-            obj.time(n) = time;
-            obj.ang_pos(n) = state.ang_pos;
-            obj.ang_vel(:, n) = state.ang_vel;
-            obj.lin_acc(:, n) = state.lin_acc;
-            obj.thr_props(:, n) = state.thr_props;
-            obj.ang_pos_cmd(n) = cmd.ang_pos;
-            obj.thr_lin_cmd(n) = cmd.thr_lin;
+            obj.states(n) = state;
+            obj.cmds(n) = cmd;
+            obj.times(n) = time;
             obj.log_length = n;
         end
         
@@ -89,13 +77,9 @@ classdef Log < handle
             %obj = TRIM(obj) Trims empty pre-allocated space from log vectors
             if ~obj.trimmed
                 n = obj.log_length;
-                obj.time = obj.time(1:n);
-                obj.ang_pos = obj.ang_pos(1:n);
-                obj.ang_vel = obj.ang_vel(:, 1:n);
-                obj.lin_acc = obj.lin_acc(:, 1:n);
-                obj.thr_props = obj.thr_props(:, 1:n);
-                obj.ang_pos_cmd = obj.ang_pos_cmd(1:n);
-                obj.thr_lin_cmd = obj.thr_lin_cmd(1:n);
+                obj.states = obj.states(1:n);
+                obj.cmds = obj.cmds(1:n);
+                obj.times = obj.times(1:n);
                 obj.trimmed = true;
             end
         end
@@ -107,14 +91,10 @@ classdef Log < handle
             i_min = find(obj.log_time > t_min, 1, 'first');
             i_max = find(obj.log_time > t_max, 1, 'first');
             
-            % Trim to endpoints
-            obj.time = obj.time(i_min:i_max);
-            obj.ang_pos = obj.ang_pos(i_min:i_max);
-            obj.ang_vel = obj.ang_vel(:, i_min:i_max);
-            obj.lin_acc = obj.lin_acc(:, i_min:i_max);
-            obj.thr_props = obj.thr_props(:, i_min:i_max);
-            obj.ang_pos_cmd = obj.ang_pos_cmd(i_min:i_max);
-            obj.thr_lin_cmd = obj.thr_lin_cmd(i_min:i_max);
+            % Trim logs to endpoints
+            obj.states = obj.states(i_min:i_max);
+            obj.cmds = obj.cmds(i_min:i_max);
+            obj.times = obj.times(i_min:i_max);
             
             % Update log length
             obj.log_length = length(obj.time);
@@ -166,6 +146,16 @@ classdef Log < handle
             end
         end
         
+        function replay(obj)
+            %REPLAY(obj) Replays log in 1:1 time in GUI
+            gui = UAV.Gui();
+            timer = Timer();
+            for i = 1:obj.log_length
+                timer.wait(obj.times(i));
+                gui.update(obj.states(i), obj.cmds(i), obj.times(i));
+            end
+        end
+        
         function save(obj)
             %SAVE(obj) Saves log to mat file
             save(obj.full_path(), 'obj');
@@ -182,16 +172,18 @@ classdef Log < handle
             %PLOT_ANG_CTRL(obj) Generates angle control plots in new figure
             obj.make_fig('Angle Control');
             axis_lbls = {'x', 'y', 'z'};
-            ang_pos_ = obj.ang_pos.vector();
-            ang_pos_cmd_ = obj.ang_pos_cmd.vector();
+            ang_pos = [obj.states.ang_pos];
+            ang_pos = [ang_pos.vector()];
+            ang_cmd = [obj.cmds.ang_pos];
+            ang_cmd = [ang_cmd.vector()];
             for i = 1:3
                 subplot(3, 1, i)
                 hold on, grid on
                 title(sprintf('Quat-%s Control', axis_lbls{i}))
                 xlabel('Time [s]')
                 ylabel('Quat')
-                plot(obj.time, ang_pos_cmd_(i+1, :), 'k--')
-                plot(obj.time, ang_pos_(i+1, :)', 'b-')
+                plot(obj.times, ang_cmd(i+1, :), 'k--')
+                plot(obj.times, ang_pos(i+1, :)', 'b-')
                 legend('Cmd', 'Val')
             end
         end
@@ -200,13 +192,14 @@ classdef Log < handle
             %PLOT_THR_PROPS(obj) Plots prop throttles in new figure
             obj.make_fig('Propeller Throttles');
             prop_lbls = {'++', '+-', '-+', '--'};
+            thr_props = [obj.states.thr_props];
             for i = 1:4
                 subplot(2, 2, i)
                 hold on, grid on
                 title(['Throttle [' prop_lbls{i} ']'])
                 xlabel('Time [s]')
                 ylabel('Throttle [0, 1]')
-                plot(obj.time, obj.thr_props(i, :), 'r-')
+                plot(obj.times, thr_props(i, :), 'r-')
                 ylim([0, 1])
             end
         end
@@ -215,13 +208,14 @@ classdef Log < handle
             %PLOT_LIN_ACC(obj) Plots linear acceleration in new figure
             obj.make_fig('Linear Acceleration');
             vec_lbls = {'x', 'y', 'z'};
+            lin_acc = [obj.states.lin_acc];
             for i = 1:3
                 subplot(3, 1, i)
                 hold on, grid on
                 title(['Accel-' vec_lbls{i}])
                 xlabel('Time [s]')
                 ylabel('Accel [m/s^2]')
-                plot(obj.time, obj.lin_acc(i, :), 'b-')
+                plot(obj.times, lin_acc(i, :), 'b-')
             end
         end
         
