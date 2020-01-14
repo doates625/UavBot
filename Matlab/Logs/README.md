@@ -1,0 +1,1 @@
+This dir is where log files are saved and read from.
