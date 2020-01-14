@@ -6,6 +6,7 @@ classdef (Abstract) Interface < handle
         model;  % UAV model [UAV.Model]
         params; % UAV flight parameters [UAV.Params]
     	state;  % UAV state [UAV.State.State]
+        cmd;    % UAV command [UAV.State.Cmd]
     end
     
     methods (Access = public)
@@ -20,11 +21,7 @@ classdef (Abstract) Interface < handle
             obj.state = UAV.State.State();
         end
     end
-    
-    methods (Access = public)
-        
-    end
-    
+
     methods (Access = public, Abstract)
         state = update(obj, cmd);
         %state = UPDATE(obj, cmd)

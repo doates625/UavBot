@@ -37,6 +37,9 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             %   Outputs:
             %       state = UAV state [UAV.State.State]
             
+            % Copy command
+            obj.cmd = cmd;
+            
             % Simulate controller
             if cmd.enum == UAV.State.Enum.Enabled
                 thr_ang = obj.ang_ctrl(cmd.ang_pos);

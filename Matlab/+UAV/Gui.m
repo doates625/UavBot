@@ -3,6 +3,7 @@ classdef Gui < handle
     %   Author: Dan Oates (WPI Class of 2020)
     
     properties (Access = protected)
+        uav;            % UAV interface [UAV.Interface]
         fig;            % Figure handle [Figure]
         plot_ang_pos;   % Orientation plot [FramePlot3D]
         plot_ang_cmd;   % Orientation cmd plot [FramePlot3D]
@@ -13,8 +14,14 @@ classdef Gui < handle
     end
     
     methods
-        function obj = Gui()
-            %obj = GUI() Create UAV GUI in new figure.
+        function obj = Gui(uav)
+            %obj = GUI(uav)
+            %   Create UAV GUI in new figure
+            %   Inputs:
+            %       uav = UAV interface [UAV.Interface]
+            
+            % Copy interface
+            obj.uav = uav;
             
             % Format figure
             obj.fig = figure;
@@ -46,17 +53,19 @@ classdef Gui < handle
             obj.timer = Timer();
         end
         
-        function update(obj, state, cmd, time)
-            %UPDATE(obj, state, cmd, t) Update GUI with new state
+        function update(obj, time)
+            %UPDATE(obj, time) Update GUI
             %   Inputs:
-            %       state = UAV state [UAV.State.State]
-            %       cmd = UAV command [UAV.State.Cmd]
             %       time = Time [s]
             
             % Start timing on first frame
             if obj.frame_cnt == 0
                 obj.timer.tic();
             end
+            
+            % Copy state and cmd
+            state = obj.uav.state;
+            cmd = obj.uav.cmd;
             
             % Update printouts
             clc

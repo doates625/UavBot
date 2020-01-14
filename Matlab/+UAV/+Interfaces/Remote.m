@@ -13,7 +13,6 @@ classdef Remote < UAV.Interfaces.Interface
     properties (Access = protected)
         server;     % Serial interface [SerialServer]
         got_state;  % Response flag [logical]
-        uav_cmd;    % UAV command [UAV.State.Cmd]
     end
     
     methods (Access = public)
@@ -42,7 +41,7 @@ classdef Remote < UAV.Interfaces.Interface
             
             % Init fields
             obj.got_state = false;
-            obj.uav_cmd = [];
+            obj.cmd = UAV.State.Cmd();
             
             % Set params on UAV
             obj.server.tx(obj.msg_id_params);
@@ -56,9 +55,9 @@ classdef Remote < UAV.Interfaces.Interface
             %   Outputs:
             %       state = UAV state [UAV.State.State]
             
-            % Transmit commands
-            obj.uav_cmd = cmd;
-            if obj.state.enum ~= obj.uav_cmd.enum
+            % Transmit command
+            obj.cmd = cmd;
+            if obj.state.enum ~= obj.cmd.enum
                 obj.server.tx(obj.msg_id_state);
             end
             obj.server.tx(obj.msg_id_update);
@@ -97,7 +96,7 @@ classdef Remote < UAV.Interfaces.Interface
             %MSG_TX_STATE(obj, server) Packs State TX message
             %   Data format:
             %   - State enum cmd [uint8]
-            server.set_tx_data(obj.uav_cmd.enum);
+            server.set_tx_data(obj.cmd.enum);
         end
         
         function msg_tx_params(obj, server)
@@ -141,8 +140,8 @@ classdef Remote < UAV.Interfaces.Interface
             %   - Angular position cmd [float, [w; x; y; z]]
             %   - Linear throttle cmd [float]
             str = Struct();
-            str.set(obj.uav_cmd.ang_pos.vector(), 'single');
-            str.set(obj.uav_cmd.thr_lin, 'single');
+            str.set(obj.cmd.ang_pos.vector(), 'single');
+            str.set(obj.cmd.thr_lin, 'single');
             server.set_tx_data(str.get_buffer());
         end
         

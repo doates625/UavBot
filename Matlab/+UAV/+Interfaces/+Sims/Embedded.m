@@ -51,7 +51,10 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
             %   Outputs:
             %       state = UAV state [UAV.State.State]
             
-            % Transmit commands and state data
+            % Copy command
+            obj.cmd = cmd;
+            
+            % Transmit command and state data
             obj.remote.update(cmd);
             obj.server.tx(obj.msg_id_update);
             

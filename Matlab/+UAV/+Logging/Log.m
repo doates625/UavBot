@@ -11,6 +11,7 @@ classdef Log < handle
     end
     
     properties (SetAccess = protected)
+        uav;        % UAV interface [UAV.Interface]
         file_name;  % File name [char]
         states;     % States log [UAV.State.State]
         cmds;       % Commands log [UAV.State.Cmd]
@@ -21,12 +22,14 @@ classdef Log < handle
     end
     
     methods
-        function obj = Log(file_name)
+        function obj = Log(uav, file_name)
             %LOG Create UAV flight log
             %   obj = LOG() Create empty UAV log
             %   obj = LOG(file_name) Load log from mat file
             %   obj = LOG('recent') Loads most recent log from mat file
-            if nargin < 1
+            
+            % File management
+            if nargin < 2
                 % Generate filename from time
                 time = datetime(now, 'ConvertFrom', 'datenum');
                 time.Format = 'MM-dd-HH-mm';
@@ -58,17 +61,18 @@ classdef Log < handle
                     obj = struct_.obj;
                 end
             end
+            
+            % Copy UAV interface
+            obj.uav = uav;
         end
        
-        function update(obj, state, cmd, time)
-            %UPDATE(obj, state, cmd, time) Add new data to log
+        function update(obj, time)
+            %UPDATE(obj, time) Add latest data to log
             %   Inputs:
-            %       state = UAV state [UAV.State.State]
-            %       cmd = UAV command [UAV.State.Cmd]
             %       time = Time [s]
             n = obj.log_length + 1;
-            obj.states(n) = state;
-            obj.cmds(n) = cmd;
+            obj.states(n) = obj.uav.state;
+            obj.cmds(n) = obj.uav.cmd;
             obj.times(n) = time;
             obj.log_length = n;
         end
