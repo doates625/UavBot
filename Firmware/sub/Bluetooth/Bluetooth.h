@@ -11,9 +11,16 @@
  */
 namespace Bluetooth
 {
+	// Main functions
 	void init();
 	bool update();
+
+	// Command getters
 	uint8_t get_state_cmd();
 	const Quat& get_ang_pos_cmd();
 	float get_thr_lin_cmd();
+
+	// Command timeouts
+	void reset_cmd_timer();
+	float get_cmd_time();
 }

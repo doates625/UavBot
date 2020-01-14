@@ -119,7 +119,7 @@ classdef Model < handle
                 
                 % Control constants
                 f_ctrl = 50.0;
-                thr_min = 0.5;
+                thr_min = 0.2;
                 thr_max = 0.6;
                 poles = -5 + [-1e-5, 0, +1e-5];
                 [qx_kp, qx_ki, qx_kd] = obj.make_pid(f_max, rad_x, inr_xx, poles);

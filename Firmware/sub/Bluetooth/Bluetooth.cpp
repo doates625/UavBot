@@ -10,6 +10,7 @@
 #include <SerialServer.h>
 #include <Struct.h>
 #include <QuatCpp.h>
+#include <Timer.h>
 using State::state_t;
 
 /**
@@ -34,7 +35,10 @@ namespace Bluetooth
 	uint8_t state_cmd = State::state_disabled;
 	Quat ang_pos_cmd;
 	float thr_lin_cmd;
-	bool got_cmds = false;	
+	bool got_cmds = false;
+	
+	// Command timer [s]
+	Timer cmd_timer;
 
 	// Init flag
 	bool init_complete = false;
@@ -55,6 +59,9 @@ void Bluetooth::init()
 		server.add_rx(msg_id_update, 20, msg_rx_update);
 		server.add_tx(msg_id_update, 57, msg_tx_update);
 
+		// Start command timer
+		cmd_timer.start();
+
 		// Set init flag
 		init_complete = true;
 	}
@@ -68,7 +75,11 @@ bool Bluetooth::update()
 {
 	server.rx();
 	bool got_cmds_copy = got_cmds;
-	got_cmds = false;
+	if (got_cmds)
+	{
+		cmd_timer.reset();
+		got_cmds = false;
+	}
 	return got_cmds_copy;
 }
 
@@ -81,7 +92,7 @@ uint8_t Bluetooth::get_state_cmd()
 }
 
 /**
- * @brief Returns orientation cmd
+ * @brief Returns orientation cmd [Quat]
  */
 const Quat& Bluetooth::get_ang_pos_cmd()
 {
@@ -89,11 +100,27 @@ const Quat& Bluetooth::get_ang_pos_cmd()
 }
 
 /**
- * @brief 
+ * @brief Returns linear throttle cmd [0, 1]
  */
 float Bluetooth::get_thr_lin_cmd()
 {
 	return thr_lin_cmd;
+}
+
+/**
+ * @brief Reset command timer
+ */
+void Bluetooth::reset_cmd_timer()
+{
+	cmd_timer.reset();
+}
+
+/**
+ * @brief Returns time since last cmd received [s]
+ */
+float Bluetooth::get_cmd_time()
+{
+	return cmd_timer.read();
 }
 
 /**

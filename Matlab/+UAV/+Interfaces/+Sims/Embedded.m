@@ -6,6 +6,7 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
         start_byte = hex2dec('FF');     % Msg start byte 
         msg_id_update = hex2dec('00');  % Data msg ID
         baud_rate = 115200;             % Serial baud rate
+        timeout = 0.5;                  % Serial timeout [s]
     end
     
     properties (Access = protected)
@@ -58,8 +59,12 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
             
             % Get throttle commands
             obj.got_thr = false;
+            timer = Timer();
             while ~obj.got_thr
                 obj.server.rx();
+                if timer.elapsed(obj.timeout)
+                    error('Serial timed out.');
+                end
             end
             
             % Simulate dynamics

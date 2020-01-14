@@ -6,6 +6,7 @@ classdef Remote < UAV.Interfaces.Interface
         start_byte = hex2dec('FF');     % Msg start byte
         msg_id_state = hex2dec('00');   % State cmd ID
         msg_id_update = hex2dec('01');  % Update msg ID
+        timeout = 0.5;                  % Bluetooth timeout [s]
     end
     
     properties (Access = protected)
@@ -57,8 +58,12 @@ classdef Remote < UAV.Interfaces.Interface
             
             % Wait for response
             obj.got_state = false;
+            timer = Timer();
             while ~obj.got_state
                 obj.server.rx();
+                if timer.elapsed(obj.timeout)
+                    error('Bluetooth timed out.');
+                end
             end
             
             % Return state

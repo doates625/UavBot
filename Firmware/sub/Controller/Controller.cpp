@@ -18,7 +18,7 @@ namespace Controller
 {
 	// Control Constants
 	const float f_ctrl = 50.0f;		// Control freq [Hz]
-	const float thr_min = 0.50f;	// Min linear throttle
+	const float thr_min = 0.20f;	// Min linear throttle
 	const float thr_max = 0.60f;	// Max linear throttle
 
 	// Quat X-axis Gains

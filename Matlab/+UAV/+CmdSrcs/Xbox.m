@@ -70,7 +70,7 @@ classdef Xbox < UAV.CmdSrcs.CmdSrc
             
             % Parse state command
             import('UAV.State.Enum');
-            if obj.xbox.btn('B')
+            if obj.xbox.btn('B') || obj.get_stop()
                 obj.enum_cmd = Enum.Disabled;
             elseif obj.xbox.btn('Start')
                 if obj.enum_cmd ~= Enum.Enabled
