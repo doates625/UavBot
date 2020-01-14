@@ -5,6 +5,7 @@
  */
 #pragma once
 #include <QuatCpp.h>
+#include <Params.h>
 
 /**
  * Namespace Declaration
@@ -19,6 +20,10 @@ namespace Bluetooth
 	uint8_t get_state_cmd();
 	const Quat& get_ang_pos_cmd();
 	float get_thr_lin_cmd();
+
+	// Param getters
+	bool got_new_params();
+	const Params& get_params();
 
 	// Command timeouts
 	void reset_cmd_timer();

@@ -10,17 +10,22 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
     end
     
     methods (Access = public)
-        function obj = Matlab(model)
-            %obj = MATLAB(model) Construct Matlab simulator with given model [UAV.Model]
+        function obj = Matlab(model, params)
+            %obj = MATLAB(model, params)
+            %   Construct Matlab simulator
+            %   Inputs:
+            %       model = UAV model [UAV.Model]
+            %       params = Flight params [UAV.Params]
             
             % Superconstructor
+            if nargin < 2, params = UAV.Params(); end
             if nargin < 1, model = UAV.Model(); end
-            obj = obj@UAV.Interfaces.Sims.Sim(model);
+            obj = obj@UAV.Interfaces.Sims.Sim(model, params);
             
             % Quaternion PID controllers
-            obj.qx_pid = obj.make_pid(obj.model.qx_kp, obj.model.qx_ki, obj.model.qx_kd);
-            obj.qy_pid = obj.make_pid(obj.model.qy_kp, obj.model.qy_ki, obj.model.qy_kd);
-            obj.qz_pid = obj.make_pid(obj.model.qz_kp, obj.model.qz_ki, obj.model.qz_kd);
+            obj.qx_pid = obj.make_pid(obj.params.qx_kp, obj.params.qx_ki, obj.params.qx_kd);
+            obj.qy_pid = obj.make_pid(obj.params.qy_kp, obj.params.qy_ki, obj.params.qy_kd);
+            obj.qz_pid = obj.make_pid(obj.params.qz_kp, obj.params.qz_ki, obj.params.qz_kd);
             obj.quat_sat = false;
         end
         
@@ -44,6 +49,23 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             % Simulate dynamics
             state = obj.update_sim(thr_props, cmd.enum);
         end
+        
+        function set_params(obj, params)
+            %SET_PARAMS(obj, params)
+            %   Set flight parameters
+            %   Inputs:
+            %       params = Flight params [UAV.Params]
+            obj.params = params;
+            obj.qx_pid.set_k_p(params.qx_kp);
+            obj.qx_pid.set_k_i(params.qx_ki);
+            obj.qx_pid.set_k_d(params.qx_kd);
+            obj.qy_pid.set_k_p(params.qy_kp);
+            obj.qy_pid.set_k_i(params.qy_ki);
+            obj.qy_pid.set_k_d(params.qy_kd);
+            obj.qz_pid.set_k_p(params.qz_kp);
+            obj.qz_pid.set_k_i(params.qz_ki);
+            obj.qz_pid.set_k_d(params.qz_kd);
+        end
     end
     
     methods (Access = protected)
@@ -60,9 +82,9 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             
             % Run PID controllers
             thr_ang_d = zeros(3, 1);
-            thr_ang_d(1) = obj.qx_pid.update(-ang_err.x, obj.model.qx_ff, obj.quat_sat);
-            thr_ang_d(2) = obj.qy_pid.update(-ang_err.y, obj.model.qy_ff, obj.quat_sat);
-            thr_ang_d(3) = obj.qz_pid.update(-ang_err.z, obj.model.qz_ff, obj.quat_sat);
+            thr_ang_d(1) = obj.qx_pid.update(-ang_err.x, obj.params.qx_ff, obj.quat_sat);
+            thr_ang_d(2) = obj.qy_pid.update(-ang_err.y, obj.params.qy_ff, obj.quat_sat);
+            thr_ang_d(3) = obj.qz_pid.update(-ang_err.z, obj.params.qz_ff, obj.quat_sat);
             
             % Convert to prop throttles
             thr_ang = obj.model.N_ang * thr_ang_d;
@@ -75,7 +97,7 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
             %       thr_lin_cmd = Linear throttle cmd [0, 1]
             %   Outputs:
             %       thr_lin = Linear prop throttle vector [0, 1]
-            thr_lin_d = clamp(thr_lin_cmd, obj.model.thr_min, obj.model.thr_max);
+            thr_lin_d = clamp(thr_lin_cmd, obj.params.thr_min, obj.params.thr_max);
             thr_lin = obj.model.N_lin * thr_lin_d;
         end
         

@@ -5,18 +5,20 @@
  */
 #pragma once
 #include <LinearCpp.h>
+#include <Params.h>
 
 /**
  * Namespace Declaration
  */
 namespace Controller
 {
-	// Constants
-	extern const float f_ctrl;		// Control freq [Hz]
+	// Timing constants
+	extern const float f_ctrl_hz;	// Control freq [Hz]
 	extern const float t_ctrl_us;	// Control period [us]
 
 	// Functions
 	void init();
+	void set_params(const Params& params);
 	void update();
 	void reset();
 	const Vector<4>& get_thr_props();

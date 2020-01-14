@@ -13,11 +13,13 @@ classdef TimeSeq < UAV.CmdSrcs.CmdSrc
     end
     
     methods (Access = public)
-        function obj = TimeSeq(model, time_cmds, ang_pos_cmds, thr_lin_cmds)
+        function obj = TimeSeq(model, params, time_cmds, ang_pos_cmds, thr_lin_cmds)
             %TIMESEQ Construct command time sequence
-            %   obj = TIMESEQ(model, time_cmds, ang_pos_cmds, thr_lin_cmds)
+            %   obj = TIMESEQ(model, params, time_cmds, ang_pos_cmds, thr_lin_cmds)
             %       Construct custom sequence
             %       Inputs:
+            %           model = UAV model [UAV.Model]
+            %           params = Flight params [UAV.Params]
             %           time_cmds = Time of cmds [s]
             %           ang_pos_cmds = Angular position cmds [Quat]
             %           thr_lin_cmds = Linear throttle cmds [0, 1]
@@ -25,11 +27,12 @@ classdef TimeSeq < UAV.CmdSrcs.CmdSrc
             %   obj = TIMESEQ() Construct default sequence with default model
             
             % Superconstructor
+            if nargin < 2, params = UAV.Params(); end
             if nargin < 1, model = UAV.Model(); end
-            obj = obj@UAV.CmdSrcs.CmdSrc(model);
+            obj = obj@UAV.CmdSrcs.CmdSrc(model, params);
             
             % Default commands
-            if nargin < 4
+            if nargin < 5
                 % Timesteps
                 time_del = 1 / model.f_ctrl;
                 time_cmds = 0:time_del:10;
@@ -49,7 +52,7 @@ classdef TimeSeq < UAV.CmdSrcs.CmdSrc
                 ang_pos_cmds = obj.eul_to_quat(ang_z, ang_y, ang_x);
                 
                 % Throttle cmd
-                thr_lin_cmds = obj.model.thr_max * ones(size(time_cmds));
+                thr_lin_cmds = obj.params.thr_max * ones(size(time_cmds));
             end
             
             % Copy args

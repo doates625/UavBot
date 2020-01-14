@@ -6,6 +6,7 @@
 #include <Imu.h>
 #include <Bluetooth.h>
 #include <Props.h>
+#include <Params.h>
 #include <CppUtil.h>
 #include <PID.h>
 using CppUtil::clamp;
@@ -16,36 +17,21 @@ using CppUtil::sqa;
  */
 namespace Controller
 {
-	// Control Constants
-	const float f_ctrl = 50.0f;		// Control freq [Hz]
-	const float thr_min = 0.20f;	// Min linear throttle
-	const float thr_max = 0.60f;	// Max linear throttle
+	// Timing constants
+	const float f_ctrl_hz = 50.0f;
+	const float t_ctrl_us = 1e6f / f_ctrl_hz;
 
-	// Quat X-axis Gains
-	const float qx_kp = +0.188f;	// P-gain
-	const float qx_ki = +0.314f;	// I-gain
-	const float qx_kd = +0.038f;	// D-gain
-	const float qx_ff = +0.000f;	// Feed-forward
-
-	// Quat Y-axis Gains
-	const float qy_kp = +0.216f;	// P-gain
-	const float qy_ki = +0.361f;	// I-gain
-	const float qy_kd = +0.043f;	// D-gain
-	const float qy_ff = +0.000f;	// Feed-forward
-
-	// Quat Z-axis Gains
-	const float qz_kp = +0.621f;	// P-gain
-	const float qz_ki = +1.035f;	// I-gain
-	const float qz_kd = +0.124f;	// D-gain
-	const float qz_ff = +0.000f;	// Feed-forward
-
-	// Derived Constants
-	const float t_ctrl_us = 1e6f / f_ctrl;
+	// Flight parameters
+	float thr_min = 0.0f;	// Min linear throttle [0, 1]
+	float thr_max = 0.0f;	// Max linear throttle [0, 1]
+	float qx_ff = 0.0f;		// Quat x-axis feed-forward [thr]
+	float qy_ff = 0.0f;		// Quat y-axis feed-forward [thr]
+	float qz_ff = 0.0f;		// Quat z-axis feed-forward [thr]
 
 	// Quaternion PID Controllers
-	PID quat_x_pid(qx_kp, qx_ki, qx_kd, -HUGE_VALF, +HUGE_VALF, f_ctrl);
-	PID quat_y_pid(qy_kp, qy_ki, qy_kd, -HUGE_VALF, +HUGE_VALF, f_ctrl);
-	PID quat_z_pid(qz_kp, qz_ki, qz_kd, -HUGE_VALF, +HUGE_VALF, f_ctrl);
+	PID qx_pid(0.0f, 0.0f, 0.0f, -HUGE_VALF, +HUGE_VALF, f_ctrl_hz);
+	PID qy_pid(0.0f, 0.0f, 0.0f, -HUGE_VALF, +HUGE_VALF, f_ctrl_hz);
+	PID qz_pid(0.0f, 0.0f, 0.0f, -HUGE_VALF, +HUGE_VALF, f_ctrl_hz);
 	bool quat_sat = false;
 
 	// Throtttle vectors and matrices
@@ -90,6 +76,34 @@ void Controller::init()
 }
 
 /**
+ * @brief Sets flight parameters
+ */
+void Controller::set_params(const Params& params)
+{
+	// Update throttle limits
+	thr_min = params.thr_min;
+	thr_max = params.thr_max;
+
+	// Update Quat-x PID gains
+	qx_pid.set_k_p(params.qx_kp);
+	qx_pid.set_k_i(params.qx_ki);
+	qx_pid.set_k_d(params.qx_kd);
+	qx_ff = params.qx_ff;
+
+	// Update Quat-y PID gains
+	qy_pid.set_k_p(params.qy_kp);
+	qy_pid.set_k_i(params.qy_ki);
+	qy_pid.set_k_d(params.qy_kd);
+	qy_ff = params.qy_ff;
+
+	// Update Quat-z PID gains
+	qz_pid.set_k_p(params.qz_kp);
+	qz_pid.set_k_i(params.qz_ki);
+	qz_pid.set_k_d(params.qz_kd);
+	qz_ff = params.qz_ff;
+}
+
+/**
  * @brief Runs one control loop iteration to calculate prop forces
  */
 void Controller::update()
@@ -107,9 +121,9 @@ void Controller::update()
 	Quat ang_err = inv(ang_pos_cmd) * ang_pos;
 	if (ang_err.w < 0.0f) ang_err = -ang_err;
 	Vector<3> thr_ang_d;
-	thr_ang_d(0) = quat_x_pid.update(-ang_err.x, qx_ff, quat_sat);
-	thr_ang_d(1) = quat_y_pid.update(-ang_err.y, qy_ff, quat_sat);
-	thr_ang_d(2) = quat_z_pid.update(-ang_err.z, qz_ff, quat_sat);
+	thr_ang_d(0) = qx_pid.update(-ang_err.x, qx_ff, quat_sat);
+	thr_ang_d(1) = qy_pid.update(-ang_err.y, qy_ff, quat_sat);
+	thr_ang_d(2) = qz_pid.update(-ang_err.z, qz_ff, quat_sat);
 	Vector<4> thr_ang = N_ang * thr_ang_d;
 
 	// Throttle anti-windup
@@ -135,9 +149,9 @@ void Controller::update()
  */
 void Controller::reset()
 {
-	quat_x_pid.reset();
-	quat_y_pid.reset();
-	quat_z_pid.reset();
+	qx_pid.reset();
+	qy_pid.reset();
+	qz_pid.reset();
 	quat_sat = false;
 	thr_props = Vector<4>();
 }

@@ -4,7 +4,7 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
     
     properties (Access = protected, Constant)
         start_byte = hex2dec('FF');     % Msg start byte 
-        msg_id_update = hex2dec('00');  % Data msg ID
+        msg_id_update = hex2dec('AA');  % Data msg ID
         baud_rate = 115200;             % Serial baud rate
         timeout = 0.5;                  % Serial timeout [s]
     end
@@ -17,21 +17,19 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
     end
     
     methods (Access = public)
-        function obj = Embedded(model, remote, sim_port)
-            %obj = EMBEDDED(model, remote, sim_port)
+        function obj = Embedded(remote, sim_port)
+            %obj = EMBEDDED(remote, sim_port)
             %   Construct UAV embedded simulator
             %   Inputs:
-            %       model = UAV model [UAV.Model]
             %       remote = UAV remote controller [UAV.Interfaces.Remote]
             %       sim_port = USB serial port name [char]
             
             % Default args
-            if nargin < 3, sim_port = 'COM17'; end
-            if nargin < 2, remote = UAV.Interfaces.Remote(); end
-            if nargin < 1, model = UAV.Model(); end
+            if nargin < 2, sim_port = 'COM17'; end
+            if nargin < 1, remote = UAV.Interfaces.Remote(); end 
             
             % Copy properties
-            obj = obj@UAV.Interfaces.Sims.Sim(model);
+            obj = obj@UAV.Interfaces.Sims.Sim(remote.model, remote.params);
             obj.remote = remote;
             
             % Set up simulation serial server
@@ -69,6 +67,15 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
             
             % Simulate dynamics
             state = obj.update_sim(obj.thr_props, cmd.enum);
+        end
+        
+        function set_params(obj, params)
+            %SET_PARAMS(obj, params)
+            %   Set flight parameters
+            %   Inputs:
+            %       params = Flight params [UAV.Params]
+            obj.params = params;
+            obj.remote.set_params(params);
         end
         
         function delete(obj)

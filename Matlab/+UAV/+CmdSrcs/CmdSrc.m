@@ -4,12 +4,18 @@ classdef (Abstract) CmdSrc < handle
     
     properties (SetAccess = protected)
         model;  % UAV model [UAV.Model]
+        params; % Flight params [UAV.Params]
     end
     
     methods (Access = public)
-        function obj = CmdSrc(model)
-            %obj = CMDSRC(model) Construct command source with given model [UAV.Model]
+        function obj = CmdSrc(model, params)
+            %obj = CMDSRC(model, params)
+            %   Construct command source
+            %   Inputs:
+            %       model = UAV model [UAV.Model]
+            %       params = Flight params [UAV.Params]
             obj.model = model;
+            obj.params = params;
         end
     end
     

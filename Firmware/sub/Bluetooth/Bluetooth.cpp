@@ -24,18 +24,24 @@ namespace Bluetooth
 
 	// Serial server
 	const uint8_t start_byte = 0xFF;
-	const uint8_t msg_id_state = 0x00;
-	const uint8_t msg_id_update = 0x01;
+	const uint8_t msg_id_state = 0xAA;
+	const uint8_t msg_id_params = 0xBB;
+	const uint8_t msg_id_update = 0xCC;
 	void msg_rx_state(uint8_t* data);
+	void msg_rx_params(uint8_t* data);
 	void msg_rx_update(uint8_t* data);
 	void msg_tx_update(uint8_t* data);
 	SerialServer server(serial, start_byte);
 
-	// Controller commands
+	// Flight commands
 	uint8_t state_cmd = State::state_disabled;
 	Quat ang_pos_cmd;
 	float thr_lin_cmd;
 	bool got_cmds = false;
+
+	// Flight params
+	bool new_params = false;
+	Params params;
 	
 	// Command timer [s]
 	Timer cmd_timer;
@@ -56,6 +62,7 @@ void Bluetooth::init()
 
 		// Configure server
 		server.add_rx(msg_id_state, 1, msg_rx_state);
+		server.add_rx(msg_id_params, 56, msg_rx_params);
 		server.add_rx(msg_id_update, 20, msg_rx_update);
 		server.add_tx(msg_id_update, 57, msg_tx_update);
 
@@ -108,6 +115,24 @@ float Bluetooth::get_thr_lin_cmd()
 }
 
 /**
+ * @brief Returns true if new params have been received since last call
+ */
+bool Bluetooth::got_new_params()
+{
+	bool new_params_copy = new_params;
+	new_params = false;
+	return new_params_copy;
+}
+
+/**
+ * @brief Returns flight params
+ */
+const Params& Bluetooth::get_params()
+{
+	return params;
+}
+
+/**
  * @brief Reset command timer
  */
 void Bluetooth::reset_cmd_timer()
@@ -136,7 +161,49 @@ void Bluetooth::msg_rx_state(uint8_t* data)
 }
 
 /**
- * @brief Gets teleop commands from remote and sends state back
+ * @brief Gets UAV flight parameters
+ * @param data Data pointer
+ * 
+ * Data format:
+ * - Min linear throttle [float, [0, 1]]
+ * - Max linear throttle [float, [0, 1]]
+ * - Quat-x P-gain [thr/rad]
+ * - Quat-x I-gain [thr/(rad*s)]
+ * - Quat-x D-gain [thr/(rad/s)]
+ * - Quat-x feed-forward [thr]
+ * - Quat-y P-gain [thr/rad]
+ * - Quat-y I-gain [thr/(rad*s)]
+ * - Quat-y D-gain [thr/(rad/s)]
+ * - Quat-y feed-forward [thr]
+ * - Quat-z P-gain [thr/rad]
+ * - Quat-z I-gain [thr/(rad*s)]
+ * - Quat-z D-gain [thr/(rad/s)]
+ * - Quat-z feed-forward [thr]
+ */
+void Bluetooth::msg_rx_params(uint8_t* data)
+{
+	Struct str(data);
+	Platform::disable_interrupts();
+	str >> params.thr_min;
+	str >> params.thr_max;
+	str >> params.qx_kp;
+	str >> params.qx_ki;
+	str >> params.qx_kd;
+	str >> params.qx_ff;
+	str >> params.qy_kp;
+	str >> params.qy_ki;
+	str >> params.qy_kd;
+	str >> params.qy_ff;
+	str >> params.qz_kp;
+	str >> params.qz_ki;
+	str >> params.qz_kd;
+	str >> params.qz_ff;
+	Platform::enable_interrupts();
+	new_params = true;
+}
+
+/**
+ * @brief Gets teleop commands and sends state back
  * @param data Data pointer
  * 
  * Data format:

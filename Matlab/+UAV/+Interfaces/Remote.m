@@ -4,8 +4,9 @@ classdef Remote < UAV.Interfaces.Interface
     
     properties (Access = protected, Constant)
         start_byte = hex2dec('FF');     % Msg start byte
-        msg_id_state = hex2dec('00');   % State cmd ID
-        msg_id_update = hex2dec('01');  % Update msg ID
+        msg_id_state = hex2dec('AA');   % State cmd ID
+        msg_id_params = hex2dec('BB');  % Param msg ID
+        msg_id_update = hex2dec('CC');  % Update msg ID
         timeout = 0.5;                  % Bluetooth timeout [s]
     end
     
@@ -16,29 +17,35 @@ classdef Remote < UAV.Interfaces.Interface
     end
     
     methods (Access = public)
-        function obj = Remote(bt_name, model)
-            %obj = REMOTE(bt_name) Construct UAV remote
+        function obj = Remote(model, params, bt_name)
+            %obj = REMOTE(model, params, bt_name) Construct UAV remote
             %   Inputs:
-            %       bt_name = Device Bluetooth name [char]
             %       model = UAV model [UAV.Model]
+            %       params = Flight params [UAV.Params]
+            %       bt_name = Device Bluetooth name [char]
             
             % Default args
-            if nargin < 2, model = UAV.Model(); end
-            if nargin < 1, bt_name = 'UavBot'; end
+            if nargin < 3, bt_name = 'UavBot'; end
+            if nargin < 2, params = UAV.Params(); end
+            if nargin < 1, model = UAV.Model(); end
             
             % Superconstructor
-            obj = obj@UAV.Interfaces.Interface(model);
+            obj = obj@UAV.Interfaces.Interface(model, params);
 
             % Set up serial server
             bluetooth_ = make_bluetooth(bt_name);
             obj.server = SerialServer(bluetooth_, obj.start_byte);
             obj.server.add_tx(obj.msg_id_state, 1, @obj.msg_tx_state);
+            obj.server.add_tx(obj.msg_id_params, 56, @obj.msg_tx_params);
             obj.server.add_tx(obj.msg_id_update, 20, @obj.msg_tx_update);
             obj.server.add_rx(obj.msg_id_update, 57, @obj.msg_rx_update);
             
             % Init fields
             obj.got_state = false;
             obj.uav_cmd = [];
+            
+            % Set params on UAV
+            obj.server.tx(obj.msg_id_params);
         end
         
         function state = update(obj, cmd)
@@ -70,6 +77,15 @@ classdef Remote < UAV.Interfaces.Interface
             state = obj.state;
         end
         
+        function set_params(obj, params)
+            %SET_PARAMS(obj, params)
+            %   Set flight parameters
+            %   Inputs:
+            %       params = Flight params [UAV.Params]
+            obj.params = params;
+            obj.server.tx(obj.msg_id_params);
+        end
+        
         function delete(obj)
             %DELETE(obj) Disonnects from Bluetooth
             fclose(obj.server.get_serial());
@@ -82,6 +98,41 @@ classdef Remote < UAV.Interfaces.Interface
             %   Data format:
             %   - State enum cmd [uint8]
             server.set_tx_data(obj.uav_cmd.enum);
+        end
+        
+        function msg_tx_params(obj, server)
+            %MSG_TX_PARAMS(obj, server) Packs params TX message
+            %   Data format:
+            %   - Min linear throttle [float, [0, 1]]
+            %   - Max linear throttle [float, [0, 1]]
+            %   - Quat-x P-gain [thr/rad]
+            %   - Quat-x I-gain [thr/(rad*s)]
+            %   - Quat-x D-gain [thr/(rad/s)]
+            %   - Quat-x feed-forward [thr]
+            %   - Quat-y P-gain [thr/rad]
+            %   - Quat-y I-gain [thr/(rad*s)]
+            %   - Quat-y D-gain [thr/(rad/s)]
+            %   - Quat-y feed-forward [thr]
+            %   - Quat-z P-gain [thr/rad]
+            %   - Quat-z I-gain [thr/(rad*s)]
+            %   - Quat-z D-gain [thr/(rad/s)]
+            %   - Quat-z feed-forward [thr]
+            str = Struct();
+            str.set(obj.params.thr_min, 'single');
+            str.set(obj.params.thr_max, 'single');
+            str.set(obj.params.qx_kp, 'single');
+            str.set(obj.params.qx_ki, 'single');
+            str.set(obj.params.qx_kd, 'single');
+            str.set(obj.params.qx_ff, 'single');
+            str.set(obj.params.qy_kp, 'single');
+            str.set(obj.params.qy_ki, 'single');
+            str.set(obj.params.qy_kd, 'single');
+            str.set(obj.params.qy_ff, 'single');
+            str.set(obj.params.qz_kp, 'single');
+            str.set(obj.params.qz_ki, 'single');
+            str.set(obj.params.qz_kd, 'single');
+            str.set(obj.params.qz_ff, 'single');
+            server.set_tx_data(str.get_buffer());
         end
         
         function msg_tx_update(obj, server)

@@ -46,6 +46,10 @@ void State::update()
 		case state_disabled:
 		{
 			Props::set_thr(Vector<4>());
+			if (Bluetooth::got_new_params())
+			{
+				Controller::set_params(Bluetooth::get_params());
+			}
 			state = (state_t)Bluetooth::get_state_cmd();
 			if (state == state_enabled)
 			{

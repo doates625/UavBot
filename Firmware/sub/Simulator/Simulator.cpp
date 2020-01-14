@@ -17,7 +17,7 @@ namespace Simulator
 
 	// Serial server
 	const uint8_t start_byte = 0xFF;
-	const uint8_t msg_id_update = 0x00;
+	const uint8_t msg_id_update = 0xAA;
 	void msg_rx_update(uint8_t* data);
 	void msg_tx_update(uint8_t* data);
 	SerialServer server(serial, start_byte);
