@@ -17,7 +17,7 @@ if nargin < 2, cmd_src = UAV.CmdSrcs.Xbox(); end
 if nargin < 1, uav = UAV.Interfaces.Sims.Matlab(); end
 
 % Initializations
-if run_gui, gui = UAV.Gui(uav); end
+if run_gui, gui = UAV.App(uav); end
 log = UAV.Logging.Log(uav);
 
 % Command loop
