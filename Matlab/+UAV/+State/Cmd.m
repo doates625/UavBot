@@ -20,7 +20,7 @@ classdef Cmd < handle
             % Default args
             if nargin < 3, enum = UAV.State.Enum.Disabled; end
             if nargin < 2, thr_lin = 0.0; end
-            if nargin < 1, ang_pos = Quat(); end
+            if nargin < 1, ang_pos = quat.Quat(); end
             
             % Copy components
             obj.ang_pos = pos_w(ang_pos);

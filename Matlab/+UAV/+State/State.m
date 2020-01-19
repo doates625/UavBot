@@ -26,7 +26,7 @@ classdef State < handle
             if nargin < 4, thr_props = zeros(4, 1); end
             if nargin < 3, lin_acc = zeros(3, 1); end
             if nargin < 2, ang_vel = zeros(3, 1); end
-            if nargin < 1, ang_pos = Quat(); end
+            if nargin < 1, ang_pos = quat.Quat(); end
             
             % Copy states
             obj.ang_pos = pos_w(ang_pos);

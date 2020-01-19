@@ -11,12 +11,13 @@ classdef (Abstract) Sim < UAV.Interfaces.Interface
         function obj = Sim(model, params)
             %obj = SIM(model, params)
             %   Construct UAV simulator
+            %   
             %   Inputs:
-            %       model = UAV model [UAV.Model]
-            %       params = Flight params [UAV.Params]
+            %   - model = UAV model [UAV.Model]
+            %   - params = Flight params [UAV.Params]
             
             % Superconstructor
-            obj = obj@UAV.Interfaces.Interface(model, params);
+            obj@UAV.Interfaces.Interface(model, params);
             
             % Acceleration matrices
             I_mat = diag([model.inr_xx, model.inr_yy, model.inr_zz]);
@@ -32,12 +33,15 @@ classdef (Abstract) Sim < UAV.Interfaces.Interface
     
     methods (Access = protected)
         function state = update_sim(obj, thr_props, enum_cmd)
-            %state = UPDATE_SIM(obj, thr_props, enum_cmd) Run one simulation iteration
+            %state = UPDATE_SIM(obj, thr_props, enum_cmd)
+            %   Run one simulation iteration
+            %   
             %   Inputs:
-            %       thr_props = Prop throttle vector [N]
-            %       enum_cmd = State machine enum cmd [UAV.State.Enum]
+            %   - thr_props = Prop throttle vector [N]
+            %   - enum_cmd = State machine enum cmd [UAV.State.Enum]
+            %   
             %   Outputs:
-            %       state = UAV state [UAV.State.State]
+            %   - state = UAV state [UAV.State.State]
             
             % State machine
             import('UAV.State.Enum');
@@ -56,7 +60,7 @@ classdef (Abstract) Sim < UAV.Interfaces.Interface
             norm_ang_vel = norm(ang_vel);
             if norm_ang_vel > 0
                 theta = norm_ang_vel * obj.model.t_ctrl;
-                ang_pos = pos_w(ang_pos * Quat(ang_vel, theta));
+                ang_pos = pos_w(ang_pos * quat.Quat(ang_vel, theta));
             end
             ang_vel = ang_vel + ang_acc * obj.model.t_ctrl;
             

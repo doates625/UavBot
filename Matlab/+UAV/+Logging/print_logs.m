@@ -1,13 +1,17 @@
 function print_logs()
     %PRINT_LOGS Prints UAV flight log names and comments
+    %   
     %   Author: Dan Oates (WPI Class of 2020)
+    
+    % Imports
+    import('UAV.Logging.Log');
     
     % Initial printout
     clc
     fprintf('UAV Flight Logs\n\n')
     
     % Process files
-    path = UAV.Logging.Log.log_path;
+    path = Log.log_path;
     files = dir([path, '*.mat']);
     for f = 1:length(files)
         
@@ -17,7 +21,7 @@ function print_logs()
         fprintf('%s:\n', name);
         
         % Print comments
-        log = UAV.Logging.Log(name);
+        log = Log(name);
         n_c = length(log.comments);
         if n_c > 0
             for c = 1:n_c

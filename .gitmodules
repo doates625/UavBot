@@ -37,3 +37,24 @@
 [submodule "Firmware/lib/PID"]
 	path = Firmware/lib/PID
 	url = https://github.com/doates625/PID.git
+[submodule "Matlab/+timing"]
+	path = Matlab/+timing
+	url = https://github.com/doates625/timing_m.git
+[submodule "Matlab/+controls"]
+	path = Matlab/+controls
+	url = https://github.com/doates625/controls_m.git
+[submodule "Matlab/+linearcpp"]
+	path = Matlab/+linearcpp
+	url = https://github.com/doates625/linearcpp_m.git
+[submodule "Matlab/+quat"]
+	path = Matlab/+quat
+	url = https://github.com/doates625/quat_m.git
+[submodule "Matlab/+live_plot"]
+	path = Matlab/+live_plot
+	url = https://github.com/doates625/live_plot_m.git
+[submodule "Matlab/+game_ctrl"]
+	path = Matlab/+game_ctrl
+	url = https://github.com/doates625/game_ctrl_m.git
+[submodule "Matlab/+serial_com"]
+	path = Matlab/+serial_com
+	url = https://github.com/doates625/serial_com_m.git

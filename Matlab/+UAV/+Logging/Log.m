@@ -16,7 +16,7 @@ classdef Log < handle
         states;     % States log [UAV.State.State]
         cmds;       % Commands log [UAV.State.Cmd]
         times;      % Time log [s]
-        log_length; % Log length [cnts]
+        length_;    % Log length [cnts]
         trimmed;    % Trimmed flag [logical]
         comments;   % Comments [cell[char]
     end
@@ -24,9 +24,15 @@ classdef Log < handle
     methods
         function obj = Log(uav, file_name)
             %LOG Create UAV flight log
+            %   
             %   obj = LOG() Create empty UAV log
             %   obj = LOG(file_name) Load log from mat file
             %   obj = LOG('recent') Loads most recent log from mat file
+            
+            % Imports
+            import('UAV.State.State');
+            import('UAV.State.Cmd');
+            import('UAV.Logging.Log');
             
             % File management
             if nargin < 2
@@ -37,14 +43,14 @@ classdef Log < handle
                 
                 % Pre-allocate log arrays
                 n = obj.init_length;
-                states(1, n) = UAV.State.State();
-                cmds(1, n) = UAV.State.Cmd();
+                states(1, n) = State();
+                cmds(1, n) = Cmd();
                 obj.states = states;
                 obj.cmds = cmds;
                 obj.times = zeros(1, n);
 
                 % Init fields
-                obj.log_length = 0;
+                obj.length_ = 0;
                 obj.trimmed = false;
                 obj.comments = {};
             else
@@ -53,7 +59,7 @@ classdef Log < handle
                     log_files = dir([obj.log_path, '*.mat']);
                     file_name = log_files(end).name;
                     file_name = file_name(1:end-4);
-                    obj = UAV.Logging.Log(file_name);
+                    obj = Log(file_name);
                 else
                     % Load from file
                     obj.file_name = file_name;
@@ -69,18 +75,18 @@ classdef Log < handle
         function update(obj, time)
             %UPDATE(obj, time) Add latest data to log
             %   Inputs:
-            %       time = Time [s]
-            n = obj.log_length + 1;
+            %   - time = Time [s]
+            n = obj.length_ + 1;
             obj.states(n) = obj.uav.state;
             obj.cmds(n) = obj.uav.cmd;
             obj.times(n) = time;
-            obj.log_length = n;
+            obj.length_ = n;
         end
         
         function obj = trim(obj)
-            %obj = TRIM(obj) Trims empty pre-allocated space from log vectors
+            %obj = TRIM(obj) Trim empty pre-allocated space from log vectors
             if ~obj.trimmed
-                n = obj.log_length;
+                n = obj.length_;
                 obj.states = obj.states(1:n);
                 obj.cmds = obj.cmds(1:n);
                 obj.times = obj.times(1:n);
@@ -89,7 +95,8 @@ classdef Log < handle
         end
         
         function obj = crop(obj, t_min, t_max)
-            %obj = CROP(obj, t_min, t_max) Crops log in time to range [t_min, t_max]
+            %obj = CROP(obj, t_min, t_max)
+            %   Crop log in time to range [t_min, t_max]
             
             % Compute endpoints
             i_min = find(obj.log_time > t_min, 1, 'first');
@@ -101,7 +108,7 @@ classdef Log < handle
             obj.times = obj.times(i_min:i_max);
             
             % Update log length
-            obj.log_length = length(obj.time);
+            obj.length_ = length(obj.time);
         end
         
         function obj = cmt(obj, comment)
@@ -115,14 +122,14 @@ classdef Log < handle
         end
         
         function plot(obj, name)
-            %PLOT Plots log data with respect to time
-            %   PLOT(obj, 'ang_pos') Plots orientation
-            %   PLOT(obj, 'lin_acc') Plots linear acceleration
-            %   PLOT(obj, 'thr_props') Plots prop throttles
-            %   PLOT(obj, 'ang_ctrl') Plots angle control
-            %   PLOT(obj, 'all') Plots all items above
+            %PLOT Plot log data with respect to time
+            %   PLOT(obj, 'ang_pos') Plot orientation
+            %   PLOT(obj, 'lin_acc') Plot linear acceleration
+            %   PLOT(obj, 'thr_props') Plot prop throttles
+            %   PLOT(obj, 'ang_ctrl') Plot angle control
+            %   PLOT(obj, 'all') Plot all items above
             %   PLOT(obj) is shorthand for PLOT(obj, 'all')
-            %   PLOT(obj, cell) Calls plot for each name in cell
+            %   PLOT(obj, cell) Call plot for each name in cell
             
             % Default arg
             if nargin < 2
@@ -150,30 +157,21 @@ classdef Log < handle
             end
         end
         
-        function replay(obj)
-            %REPLAY(obj) Replays log in 1:1 time in GUI
-            gui = UAV.Gui();
-            timer = Timer();
-            for i = 1:obj.log_length
-                timer.wait(obj.times(i));
-                gui.update(obj.states(i), obj.cmds(i), obj.times(i));
-            end
-        end
-        
         function save(obj)
-            %SAVE(obj) Saves log to mat file
+            %SAVE(obj) Save log to mat file
             save(obj.full_path(), 'obj');
         end
     end
     
     methods (Access = protected)
         function path = full_path(obj)
-            %path = FULL_PATH(obj) Full relative file path with '.mat' extension
+            %path = FULL_PATH(obj)
+            %   Full relative file path with '.mat' extension
             path = [obj.log_path, obj.file_name, '.mat'];
         end
         
         function plot_ang_pos(obj)
-            %PLOT_ANG_POS(obj) Plots quat positions and setpoints
+            %PLOT_ANG_POS(obj) Plot quat positions and setpoints
             obj.make_fig('Angular Position');
             axis_lbls = {'w', 'x', 'y', 'z'};
             ang_pos = [obj.states.ang_pos];
@@ -193,7 +191,7 @@ classdef Log < handle
         end
         
         function plot_lin_acc(obj)
-            %PLOT_LIN_ACC(obj) Plots linear acceleration in new figure
+            %PLOT_LIN_ACC(obj) Plot linear acceleration in new figure
             obj.make_fig('Linear Acceleration');
             vec_lbls = {'x', 'y', 'z'};
             lin_acc = [obj.states.lin_acc];
@@ -208,7 +206,7 @@ classdef Log < handle
         end
         
         function plot_thr_props(obj)
-            %PLOT_THR_PROPS(obj) Plots prop throttles in new figure
+            %PLOT_THR_PROPS(obj) Plot prop throttles in new figure
             obj.make_fig('Propeller Throttles');
             prop_lbls = {'++', '+-', '-+', '--'};
             thr_props = [obj.states.thr_props];
@@ -224,8 +222,13 @@ classdef Log < handle
         end
         
         function plot_ang_ctrl(obj)
-            %PLOT_ANG_CTRL(obj) Generates angle control plots in new figure
-            obj.make_fig('Angular Position');
+            %PLOT_ANG_CTRL(obj)
+            %   Generate angle control plots in new figure
+            
+            % Imports
+            import('UAV.Model');
+            
+            % Compute angular errors and thrusts
             axis_lbls = {'x', 'y', 'z'};
             ang_pos = [obj.states.ang_pos];
             ang_cmd = [obj.cmds.ang_pos];
@@ -236,7 +239,10 @@ classdef Log < handle
                 ang_err(:, i) = err(2:4);
             end
             thr_props = [obj.states.thr_props];
-            thr_ang = UAV.Model.N_inv_ang * thr_props;
+            thr_ang = Model.N_inv_ang * thr_props;
+            
+            % Generate plots
+            obj.make_fig('Angular Position');
             for i = 1:3
                 subplot(3, 1, i)
                 hold on, grid on
@@ -250,7 +256,7 @@ classdef Log < handle
         end
         
         function fig = make_fig(obj, name)
-            %fig = MAKE_FIG(obj, window_title) Makes new figure with given name
+            %fig = MAKE_FIG(obj, window_title) Make new figure with given name
             name = [name, ' (', obj.file_name, ')'];
             fig = figure('Name', name);
         end

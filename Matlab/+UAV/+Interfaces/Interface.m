@@ -11,14 +11,16 @@ classdef (Abstract) Interface < handle
     
     methods (Access = public)
         function obj = Interface(model, params)
-            %obj = INTERFACE(model, param_file) Construct UAV interface
+            %obj = INTERFACE(model, param_file)
+            %   Construct UAV interface
+            %   
             %   Inputs:
-            %       model = UAVmodel [UAV.Model]
-            %       params = Flight params file [char]
-            % 
+            %   - model = UAVmodel [UAV.Model]
+            %   - params = Flight params file [char]
+            import('UAV.State.State');
             obj.model = model;
             obj.params = params;
-            obj.state = UAV.State.State();
+            obj.state = State();
         end
     end
 
@@ -26,15 +28,18 @@ classdef (Abstract) Interface < handle
         state = update(obj, cmd);
         %state = UPDATE(obj, cmd)
         %   Send commands and get new state
+        %   
         %   Inputs:
-        %       cmd = UAV command [UAV.State.Cmd]
+        %   - cmd = UAV command [UAV.State.Cmd]
+        %   
         %   Outputs:
-        %       state = UAV state [UAV.State.State]
+        %   - state = UAV state [UAV.State.State]
         
         set_params(obj, params)
         %SET_PARAMS(obj, params)
         %   Set flight parameters
+        %   
         %   Inputs:
-        %       params = Flight params [UAV.Params]
+        %   - params = Flight params [UAV.Params]
     end
 end

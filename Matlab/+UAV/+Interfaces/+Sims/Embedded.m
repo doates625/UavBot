@@ -20,21 +20,22 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
         function obj = Embedded(remote, sim_port)
             %obj = EMBEDDED(remote, sim_port)
             %   Construct UAV embedded simulator
+            %   
             %   Inputs:
-            %       remote = UAV remote controller [UAV.Interfaces.Remote]
-            %       sim_port = USB serial port name [char]
+            %   - remote = UAV remote controller [UAV.Interfaces.Remote]
+            %   - sim_port = USB serial port name [char]
             
             % Default args
             if nargin < 2, sim_port = 'COM17'; end
             if nargin < 1, remote = UAV.Interfaces.Remote(); end 
             
             % Copy properties
-            obj = obj@UAV.Interfaces.Sims.Sim(remote.model, remote.params);
+            obj@UAV.Interfaces.Sims.Sim(remote.model, remote.params);
             obj.remote = remote;
             
             % Set up simulation serial server
-            serial_ = make_serial(sim_port, obj.baud_rate);
-            obj.server = SerialServer(serial_, obj.start_byte);
+            serial_ = serial_com.make_serial(sim_port, obj.baud_rate);
+            obj.server = serial_com.SerialServer(serial_, obj.start_byte);
             obj.server.add_tx(obj.msg_id_update, 40, @obj.msg_tx_update);
             obj.server.add_rx(obj.msg_id_update, 16, @obj.msg_rx_update);
 
@@ -46,10 +47,12 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
         function state = update(obj, cmd)
             %state = UPDATE(obj, cmd)
             %   Send commands and get new state
+            %   
             %   Inputs:
-            %       cmd = UAV command [UAV.State.Cmd]
+            %   - cmd = UAV command [UAV.State.Cmd]
+            %   
             %   Outputs:
-            %       state = UAV state [UAV.State.State]
+            %   - state = UAV state [UAV.State.State]
             
             % Copy command
             obj.cmd = cmd;
@@ -60,7 +63,7 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
             
             % Get throttle commands
             obj.got_thr = false;
-            timer = Timer();
+            timer = timing.Timer();
             while ~obj.got_thr
                 obj.server.rx();
                 if timer.elapsed(obj.timeout)
@@ -94,7 +97,7 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
             %   - Angular position [float, [w; x; y; z]]
             %   - Angular velocity [float, [x; y; z], rad/s]
             %   - Local acceleration [float, [x; y; z], m/s^2]
-            str = Struct();
+            str = serial_com.Struct();
             str.set(obj.state.ang_pos.vector(), 'single');
             str.set(obj.state.ang_vel, 'single');
             acc_glo = obj.state.lin_acc;
@@ -107,7 +110,7 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
             %MSG_RX_DATA(obj, server) Unpacks force RX message
             %   Data format:
             %   - Prop throttles [float, [++, +-, -+, --], [0, 1]]
-            str = Struct(server.get_rx_data());
+            str = serial_com.Struct(server.get_rx_data());
             for i = 1:4
                 obj.thr_props(i) = str.get('single');
             end
@@ -115,4 +118,3 @@ classdef Embedded < UAV.Interfaces.Sims.Sim
         end
     end
 end
-

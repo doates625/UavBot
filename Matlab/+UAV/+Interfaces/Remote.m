@@ -17,11 +17,18 @@ classdef Remote < UAV.Interfaces.Interface
     
     methods (Access = public)
         function obj = Remote(model, params, bt_name)
-            %obj = REMOTE(model, params, bt_name) Construct UAV remote
+            %obj = REMOTE(model, params, bt_name)
+            %   Construct UAV remote
+            %   
             %   Inputs:
-            %       model = UAV model [UAV.Model]
-            %       params = Flight params [UAV.Params]
-            %       bt_name = Device Bluetooth name [char]
+            %   - model = UAV model [UAV.Model]
+            %   - params = Flight params [UAV.Params]
+            %   - bt_name = Device Bluetooth name [char]
+            
+            % Imports
+            import('UAV.State.Cmd');
+            import('serial_com.make_bluetooth');
+            import('serial_com.SerialServer');
             
             % Default args
             if nargin < 3, bt_name = 'UavBot'; end
@@ -29,7 +36,7 @@ classdef Remote < UAV.Interfaces.Interface
             if nargin < 1, model = UAV.Model(); end
             
             % Superconstructor
-            obj = obj@UAV.Interfaces.Interface(model, params);
+            obj@UAV.Interfaces.Interface(model, params);
 
             % Set up serial server
             bluetooth_ = make_bluetooth(bt_name);
@@ -41,7 +48,7 @@ classdef Remote < UAV.Interfaces.Interface
             
             % Init fields
             obj.got_state = false;
-            obj.cmd = UAV.State.Cmd();
+            obj.cmd = Cmd();
             
             % Set params on UAV
             obj.server.tx(obj.msg_id_params);
@@ -50,10 +57,15 @@ classdef Remote < UAV.Interfaces.Interface
         function state = update(obj, cmd)
             %state = UPDATE(obj, cmd)
             %   Send commands and get new state
+            %   
             %   Inputs:
-            %       cmd = UAV command [UAV.State.Cmd]
+            %   - cmd = UAV command [UAV.State.Cmd]
+            %   
             %   Outputs:
-            %       state = UAV state [UAV.State.State]
+            %   - state = UAV state [UAV.State.State]
+            
+            % Imports
+            import('timing.Timer');
             
             % Transmit command
             obj.cmd = cmd;
@@ -79,8 +91,9 @@ classdef Remote < UAV.Interfaces.Interface
         function set_params(obj, params)
             %SET_PARAMS(obj, params)
             %   Set flight parameters
+            %   
             %   Inputs:
-            %       params = Flight params [UAV.Params]
+            %   - params = Flight params [UAV.Params]
             obj.params = params;
             obj.server.tx(obj.msg_id_params);
         end
@@ -93,14 +106,18 @@ classdef Remote < UAV.Interfaces.Interface
     
     methods (Access = protected)
         function msg_tx_state(obj, server)
-            %MSG_TX_STATE(obj, server) Packs State TX message
+            %MSG_TX_STATE(obj, server)
+            %   Packs State TX message
+            %   
             %   Data format:
             %   - State enum cmd [uint8]
             server.set_tx_data(obj.cmd.enum);
         end
         
         function msg_tx_params(obj, server)
-            %MSG_TX_PARAMS(obj, server) Packs params TX message
+            %MSG_TX_PARAMS(obj, server)
+            %   Packs params TX message
+            %   
             %   Data format:
             %   - Min linear throttle [float, [0, 1]]
             %   - Max linear throttle [float, [0, 1]]
@@ -116,6 +133,7 @@ classdef Remote < UAV.Interfaces.Interface
             %   - Quat-z I-gain [thr/(rad*s)]
             %   - Quat-z D-gain [thr/(rad/s)]
             %   - Quat-z feed-forward [thr]
+            import('serial_com.Struct');
             str = Struct();
             str.set(obj.params.thr_min, 'single');
             str.set(obj.params.thr_max, 'single');
@@ -135,10 +153,13 @@ classdef Remote < UAV.Interfaces.Interface
         end
         
         function msg_tx_update(obj, server)
-            %MSG_TX_UPDATE(obj, server) Packs Update TX message
+            %MSG_TX_UPDATE(obj, server)
+            %   Packs Update TX message
+            %   
             %   Data format:
             %   - Angular position cmd [float, [w; x; y; z]]
             %   - Linear throttle cmd [float]
+            import('serial_com.Struct');
             str = Struct();
             str.set(obj.cmd.ang_pos.vector(), 'single');
             str.set(obj.cmd.thr_lin, 'single');
@@ -146,14 +167,22 @@ classdef Remote < UAV.Interfaces.Interface
         end
         
         function msg_rx_update(obj, server)
-            %MSG_RX_UPDATE(obj, server) Unpacks Update RX message
+            %MSG_RX_UPDATE(obj, server)
+            %   Unpacks Update RX message
+            %   
             %   Data format:
             %   - Angular position [float, [w; x; y; z]]
             %   - Angular velocity [float, [x; y; z], rad/s]
             %   - Local acceleration [float, [x; y; z], m/s^2]
             %   - Prop throttles [float, [++, +-, -+, --], [0, 1]]
             %   - State enum cmd [uint8]
-
+            
+            % Imports
+            import('UAV.State.State');
+            import('UAV.State.Enum');
+            import('serial_com.Struct');
+            import('quat.Quat');
+            
             % Struct unpacker
             str = Struct(server.get_rx_data());
             
@@ -168,7 +197,6 @@ classdef Remote < UAV.Interfaces.Interface
             thr_props = arr(11:14);
             
             % Unpack enum
-            import('UAV.State.Enum');
             enum_byte = str.get('uint8');
             switch (enum_byte)
                 case Enum.Enabled, enum = Enum.Enabled;
@@ -177,7 +205,7 @@ classdef Remote < UAV.Interfaces.Interface
             end
             
             % Update state and response flag
-            obj.state = UAV.State.State(ang_pos, ang_vel, lin_acc, thr_props, enum);
+            obj.state = State(ang_pos, ang_vel, lin_acc, thr_props, enum);
             obj.got_state = true;
         end
     end

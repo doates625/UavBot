@@ -1,5 +1,6 @@
 classdef Model < handle
     %MODEL UAV physical and control constants
+    %   
     %   Author: Dan Oates (WPI Class of 2020)
     
     properties (GetAccess = public, Constant)
@@ -18,17 +19,16 @@ classdef Model < handle
     end
     
     properties (SetAccess = protected)
-        % Physical Constants
-        inr_xx;     % Inertia moment x [kg*m^2]
-        inr_yy;     % Inertia moment y [kg*m^2]
-        inr_zz;     % Inertia moment z [kg*m^2]
-        mass;       % Mass [kg]
-        rad_x;      % Prop moment arm x [m]
-        rad_y;      % Prop moment arm y [m]
-        rad_z;      % Prop moment arm z [m]
-        f_max;      % Max single prop force [N]
-        f_ctrl;     % Control frequency [Hz]
-        t_ctrl;     % Control period [s]
+        inr_xx; % Inertia moment x [kg*m^2]
+        inr_yy; % Inertia moment y [kg*m^2]
+        inr_zz; % Inertia moment z [kg*m^2]
+        mass;   % Mass [kg]
+        rad_x;  % Prop moment arm x [m]
+        rad_y;  % Prop moment arm y [m]
+        rad_z;  % Prop moment arm z [m]
+        f_max;  % Max single prop force [N]
+        f_ctrl; % Control frequency [Hz]
+        t_ctrl; % Control period [s]
     end
     
     methods (Access = public)
@@ -37,21 +37,24 @@ classdef Model < handle
                 rad_x, rad_y, rad_z, ...
                 f_max, f_ctrl)
             %MODEL Construct UAV model
+            %   
             %   obj = MODEL(...
-            %       inr_xx, inr_yy, inr_zz, mass, ...
-            %       rad_x, rad_y, rad_z, ...
-            %       f_max, f_ctrl)
+            %           inr_xx, inr_yy, inr_zz, mass, ...
+            %           rad_x, rad_y, rad_z, ...
+            %           f_max, f_ctrl)
             %       Construct custom UAV model
+            %       
             %       Inputs:
-            %           inr_xx = Inertia moment x [kg*m^2]
-            %           inr_yy = Inertia moment y [kg*m^2]
-            %           inr_zz = Inertia moment z [kg*m^2]
-            %           mass = Mass [kg]
-            %           rad_x = Prop moment arm x [m]
-            %           rad_y = Prop moment arm y [m]
-            %           rad_z = Prop moment arm z [m]
-            %           f_max = Max single prop force [N]
-            %           f_ctrl = Control frequency [Hz]
+            %       - inr_xx = Inertia moment x [kg*m^2]
+            %       - inr_yy = Inertia moment y [kg*m^2]
+            %       - inr_zz = Inertia moment z [kg*m^2]
+            %       - mass = Mass [kg]
+            %       - rad_x = Prop moment arm x [m]
+            %       - rad_y = Prop moment arm y [m]
+            %       - rad_z = Prop moment arm z [m]
+            %       - f_max = Max single prop force [N]
+            %       - f_ctrl = Control frequency [Hz]
+            %   
             %   obj = MODEL() Construct default model
             
             % Default args
@@ -84,17 +87,22 @@ classdef Model < handle
         
         function print_cpp(obj)
             %PRINT_CPP(obj) Prints C++ code for constants
+            
+            % Imports
+            import('linearcpp.print_mat');
+            
+            % Initial printout
             clc
             fprintf('UAV Model C++ Code:\n\n');
             
             % Init angular N-matrix
             fprintf('// Init angular N-matrix\n');
-            print_mat_cpp('N_ang', obj.N_ang);
+            print_mat('N_ang', obj.N_ang);
             fprintf('\n');
             
             % Init linear N-matrix
             fprintf('// Init linear N-matrix\n');
-            print_mat_cpp('N_lin', obj.N_lin);
+            print_mat('N_lin', obj.N_lin);
             fprintf('\n');
         end
     end

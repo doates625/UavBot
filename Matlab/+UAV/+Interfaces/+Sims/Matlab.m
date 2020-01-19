@@ -3,9 +3,9 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
     %   Author: Dan Oates (WPI Class of 2020)
     
     properties (Access = protected)
-        qx_pid;     % Quat x-axis ctrl [PID]
-        qy_pid;     % Quat y-axis ctrl [PID]
-        qz_pid;     % Quat z-axis ctrl [PID]
+        qx_pid;     % Quat x-axis ctrl [controls.PID]
+        qy_pid;     % Quat y-axis ctrl [controls.PID]
+        qz_pid;     % Quat z-axis ctrl [controls.PID]
         quat_sat;   % Quat PID saturation flag [logical]
     end
     
@@ -13,14 +13,15 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
         function obj = Matlab(model, params)
             %obj = MATLAB(model, params)
             %   Construct Matlab simulator
+            %   
             %   Inputs:
-            %       model = UAV model [UAV.Model]
-            %       params = Flight params [UAV.Params]
+            %   - model = UAV model [UAV.Model]
+            %   - params = Flight params [UAV.Params]
             
             % Superconstructor
             if nargin < 2, params = UAV.Params(); end
             if nargin < 1, model = UAV.Model(); end
-            obj = obj@UAV.Interfaces.Sims.Sim(model, params);
+            obj@UAV.Interfaces.Sims.Sim(model, params);
             
             % Quaternion PID controllers
             obj.qx_pid = obj.make_pid(obj.params.qx_kp, obj.params.qx_ki, obj.params.qx_kd);
@@ -32,10 +33,12 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
         function state = update(obj, cmd)
             %state = UPDATE(obj, cmd)
             %   Send commands and get new state
+            %   
             %   Inputs:
-            %       cmd = UAV command [UAV.State.Cmd]
+            %   - cmd = UAV command [UAV.State.Cmd]
+            %   
             %   Outputs:
-            %       state = UAV state [UAV.State.State]
+            %   - state = UAV state [UAV.State.State]
             
             % Copy command
             obj.cmd = cmd;
@@ -56,8 +59,9 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
         function set_params(obj, params)
             %SET_PARAMS(obj, params)
             %   Set flight parameters
+            %   
             %   Inputs:
-            %       params = Flight params [UAV.Params]
+            %   - params = Flight params [UAV.Params]
             obj.params = params;
             obj.qx_pid.set_k_p(params.qx_kp);
             obj.qx_pid.set_k_i(params.qx_ki);
@@ -75,10 +79,12 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
         function thr_ang = ang_ctrl(obj, ang_pos_cmd)
             %thr_ang = ANG_CTRL(obj, ang_pos_cmd)
             %   Angular control system
+            %   
             %   Inputs:
-            %       ang_pos_cmd = Angular position command [Quat]
+            %   - ang_pos_cmd = Angular position command [quat.Quat]
+            %   
             %   Outputs:
-            %       thr_ang = Angular prop throttle vector [0, 1]
+            %   - thr_ang = Angular prop throttle vector [0, 1]
             
             % Compute angular error
             ang_err = pos_w(ang_pos_cmd \ obj.state.ang_pos);
@@ -96,23 +102,27 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
         function thr_lin = lin_ctrl(obj, thr_lin_cmd)
             %thr_lin = LIN_CTRL(obj, thr_lin_cmd)
             %   Linear control system
+            %   
             %   Inputs:
-            %       thr_lin_cmd = Linear throttle cmd [0, 1]
+            %   - thr_lin_cmd = Linear throttle cmd [0, 1]
+            %   
             %   Outputs:
-            %       thr_lin = Linear prop throttle vector [0, 1]
-            thr_lin_d = clamp(thr_lin_cmd, obj.params.thr_min, obj.params.thr_max);
+            %   - thr_lin = Linear prop throttle vector [0, 1]
+            thr_lin_d = controls.clamp(...
+                thr_lin_cmd, obj.params.thr_min, obj.params.thr_max);
             thr_lin = obj.model.N_lin * thr_lin_d;
         end
         
         function thr_props = anti_windup(obj, thr_ang, thr_lin)
             %thr_props = ANTI_WINDUP(obj, thr_ang, thr_lin)
             %   Anti-windup controller
-            %   Limits angular throttles and set flag to prevent windup
+            %   
             %   Inputs:
-            %       thr_ang = Angular prop throttles [0, 1]
-            %       thr_lin = Linear prop throttles [0, 1]
+            %   - thr_ang = Angular prop throttles [0, 1]
+            %   - thr_lin = Linear prop throttles [0, 1]
+            %   
             %   Outputs:
-            %       thr_props = Combined prop throttles [N]
+            %   - thr_props = Combined prop throttles [N]
             p_min = 1;
             obj.quat_sat = false;
             for i = 1:4
@@ -132,11 +142,18 @@ classdef Matlab < UAV.Interfaces.Sims.Sim
         end
         
         function pid = make_pid(obj, kp, ki, kd)
-            %pid = MAKE_PID(obj, kp, ki, kd) Make quaternion PID controller
-            %   kp = P-gain [thr/rad]
-            %   ki = I-gain [thr/(rad*s)]
-            %   kd = D-gain [thr/(rad/s)]
-            pid = PID(kp, ki, kd, -realmax(), +realmax(), obj.model.f_ctrl);
+            %pid = MAKE_PID(obj, kp, ki, kd)
+            %   Make quaternion PID controller
+            %   
+            %   Inputs:
+            %   - kp = P-gain [thr/rad]
+            %   - ki = I-gain [thr/(rad*s)]
+            %   - kd = D-gain [thr/(rad/s)]
+            %   
+            %   Outputs:
+            %   - pid = PID controller [controls.PID]
+            pid = controls.PID(...
+                kp, ki, kd, -realmax(), +realmax(), obj.model.f_ctrl);
         end
     end
 end
