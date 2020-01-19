@@ -3,10 +3,10 @@ classdef (Abstract) Interface < handle
     %   Author: Dan Oates (WPI Class of 2020)
 
     properties (SetAccess = protected)
-        model;  % UAV model [UAV.Model]
-        params; % UAV flight parameters [UAV.Params]
-    	state;  % UAV state [UAV.State.State]
-        cmd;    % UAV command [UAV.State.Cmd]
+        model;  % UAV model [uav.Model]
+        params; % UAV flight parameters [uav.Params]
+    	state;  % UAV state [uav.state.State]
+        cmd;    % UAV command [uav.state.Cmd]
     end
     
     methods (Access = public)
@@ -15,9 +15,9 @@ classdef (Abstract) Interface < handle
             %   Construct UAV interface
             %   
             %   Inputs:
-            %   - model = UAVmodel [UAV.Model]
+            %   - model = UAVmodel [uav.Model]
             %   - params = Flight params file [char]
-            import('UAV.State.State');
+            import('uav.state.State');
             obj.model = model;
             obj.params = params;
             obj.state = State();
@@ -30,16 +30,16 @@ classdef (Abstract) Interface < handle
         %   Send commands and get new state
         %   
         %   Inputs:
-        %   - cmd = UAV command [UAV.State.Cmd]
+        %   - cmd = UAV command [uav.state.Cmd]
         %   
         %   Outputs:
-        %   - state = UAV state [UAV.State.State]
+        %   - state = UAV state [uav.state.State]
         
         set_params(obj, params)
         %SET_PARAMS(obj, params)
         %   Set flight parameters
         %   
         %   Inputs:
-        %   - params = Flight params [UAV.Params]
+        %   - params = Flight params [uav.Params]
     end
 end

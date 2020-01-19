@@ -1,4 +1,4 @@
-classdef (Abstract) Sim < UAV.Interfaces.Interface
+classdef (Abstract) Sim < uav.interface.Interface
     %SIM Superclass for simulated UAVs
     %   Author: Dan Oates (WPI Class of 2020)
     
@@ -13,11 +13,11 @@ classdef (Abstract) Sim < UAV.Interfaces.Interface
             %   Construct UAV simulator
             %   
             %   Inputs:
-            %   - model = UAV model [UAV.Model]
-            %   - params = Flight params [UAV.Params]
+            %   - model = UAV model [uav.Model]
+            %   - params = Flight params [uav.Params]
             
             % Superconstructor
-            obj@UAV.Interfaces.Interface(model, params);
+            obj@uav.interface.Interface(model, params);
             
             % Acceleration matrices
             I_mat = diag([model.inr_xx, model.inr_yy, model.inr_zz]);
@@ -38,13 +38,16 @@ classdef (Abstract) Sim < UAV.Interfaces.Interface
             %   
             %   Inputs:
             %   - thr_props = Prop throttle vector [N]
-            %   - enum_cmd = State machine enum cmd [UAV.State.Enum]
+            %   - enum_cmd = State machine enum cmd [uav.state.Enum]
             %   
             %   Outputs:
-            %   - state = UAV state [UAV.State.State]
+            %   - state = UAV state [uav.state.State]
+            
+            % Imports
+            import('uav.state.State');
+            import('uav.state.Enum');
             
             % State machine
-            import('UAV.State.Enum');
             ang_pos = obj.state.ang_pos;
             z_hat = ang_pos.rotate([0; 0; 1]);
             if z_hat(3) < 0
@@ -69,7 +72,6 @@ classdef (Abstract) Sim < UAV.Interfaces.Interface
             lin_acc = ang_pos.rotate(lin_acc) - obj.model.gravity_vec;
             
             % Update state
-            import('UAV.State.State');
             obj.state = State(ang_pos, ang_vel, lin_acc, thr_props, enum_cmd);
             state = obj.state;
         end

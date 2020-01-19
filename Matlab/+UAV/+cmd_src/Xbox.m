@@ -1,5 +1,6 @@
-classdef Xbox < UAV.CmdSrcs.CmdSrc
+classdef Xbox < uav.cmd_src.CmdSrc
     %XBOX Xbox game controller for UAV piloting
+    %   
     %   Author: Dan Oates (WPI Class of 2020)
     
     properties (SetAccess = protected)
@@ -23,16 +24,16 @@ classdef Xbox < UAV.CmdSrcs.CmdSrc
             %   Construct Xbox UAV controller
             %   
             %   Inputs:
-            %   - model = UAV model [UAV.Model]
-            %   - params = Flight params [UAV.Params]
+            %   - model = UAV model [uav.Model]
+            %   - params = Flight params [uav.Params]
             %   - vel_z_max = Max yaw rate [rad/s]
             %   - ang_y_max = Max pitch angle [rad]
             %   - ang_x_max = Max roll angle [rad]
             
             % Imports
-            import('UAV.Params');
-            import('UAV.Model');
-            import('UAV.State.Enum');
+            import('uav.Params');
+            import('uav.Model');
+            import('uav.state.Enum');
             import('controls.Integrator');
             import('timing.Timer');
             
@@ -44,7 +45,7 @@ classdef Xbox < UAV.CmdSrcs.CmdSrc
             if nargin < 1, model = Model(); end
             
             % Init properties
-            obj@UAV.CmdSrcs.CmdSrc(model, params);
+            obj@uav.cmd_src.CmdSrc(model, params);
             obj.vel_z_max = vel_z_max;
             obj.ang_y_max = ang_y_max;
             obj.ang_x_max = ang_x_max;
@@ -63,12 +64,12 @@ classdef Xbox < UAV.CmdSrcs.CmdSrc
             %[cmd, time] = GET_CMD(obj) Get commands and time
             %   
             %   Outputs:
-            %   - cmd = UAV command [UAV.State.Cmd]
+            %   - cmd = UAV command [uav.state.Cmd]
             %   - time = Time [s]
             
             % Imports
-            import('UAV.State.Enum');
-            import('UAV.State.Cmd');
+            import('uav.state.Enum');
+            import('uav.state.Cmd');
             import('controls.clamp');
             
             % Parse orientation cmd

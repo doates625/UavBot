@@ -1,10 +1,11 @@
-classdef TimeSeq < UAV.CmdSrcs.CmdSrc
+classdef TimeSeq < uav.cmd_src.CmdSrc
     %TIMSEQ Time sequence of preset commands for UAV piloting
+    %   
     %    Author: Dan Oates (WPI Class of 2020)
     
     properties (SetAccess = protected)
         time;       % Time of cmds [s]
-        ang_pos;    % Angular position cmds [Quat]
+        ang_pos;    % Angular position cmds [quat.Quat]
         thr_lin;    % Linear throttle cmds [0, 1]
     end
     properties (Access = protected)
@@ -20,20 +21,24 @@ classdef TimeSeq < UAV.CmdSrcs.CmdSrc
             %       Construct custom sequence
             %       
             %       Inputs:
-            %       - model = UAV model [UAV.Model]
-            %       - params = Flight params [UAV.Params]
+            %       - model = UAV model [uav.Model]
+            %       - params = Flight params [uav.Params]
             %       - time = Time of cmds [s]
-            %       - ang_pos = Angular position cmds [Quat]
+            %       - ang_pos = Angular position cmds [quat.Quat]
             %       - thr_lin = Linear throttle cmds [0, 1]
             %   
             %   obj = TIMESEQ(model) Construct default sequence with given model
             %   
             %   obj = TIMESEQ() Construct default sequence with default model
             
+            % Imports
+            import('uav.Params');
+            import('uav.Model');
+            
             % Superconstructor
-            if nargin < 2, params = UAV.Params(); end
-            if nargin < 1, model = UAV.Model(); end
-            obj = obj@UAV.CmdSrcs.CmdSrc(model, params);
+            if nargin < 2, params = Params(); end
+            if nargin < 1, model = Model(); end
+            obj = obj@uav.cmd_src.CmdSrc(model, params);
             
             % Default commands
             if nargin < 5
@@ -71,12 +76,12 @@ classdef TimeSeq < UAV.CmdSrcs.CmdSrc
             %[cmd, time] = GET_CMD(obj) Get command and time
             %   
             %   Outputs:
-            %   - cmd = UAV command [UAV.Cmd]
+            %   - cmd = UAV command [uav.Cmd]
             %   - time = Time [s]
             
             % Imports
-            import('UAV.State.Enum');
-            import('UAV.State.Cmd');
+            import('uav.state.Enum');
+            import('uav.state.Cmd');
             
             % Form command
             ang_pos_ = obj.ang_pos(obj.i_cmd);

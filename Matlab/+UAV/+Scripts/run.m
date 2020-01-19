@@ -13,10 +13,10 @@ function log = run(uav, cmd_src, run_gui, save_log)
 %   Author: Dan Oates (WPI Class of 2020)
 
 % Imports
-import('UAV.CmdSrcs.Xbox');
-import('UAV.Interfaces.Sims.Matlab');
-import('UAV.Gui');
-import('UAV.Logging.Log');
+import('uav.cmd_src.Xbox');
+import('uav.interface.sim.Matlab');
+import('uav.Gui');
+import('uav.logging.Log');
 
 % Default args
 if nargin < 4, save_log = false; end

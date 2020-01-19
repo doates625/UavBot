@@ -7,9 +7,9 @@ function log = run_em_ts()
 %   Author: Dan Oates (WPI Class of 2020)
 
 % Imports
-import('UAV.Interfaces.Sims.Embedded');
-import('UAV.CmdSrcs.TimeSeq');
-import('UAV.Scripts.run');
+import('uav.interface.sim.Embedded');
+import('uav.cmd_src.TimeSeq');
+import('uav.scripts.run');
 
 % Function
 clc

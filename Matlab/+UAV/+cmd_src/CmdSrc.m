@@ -1,5 +1,6 @@
 classdef (Abstract) CmdSrc < handle
     %CMDSRC Superclass for UAV command sources
+    %   
     %   Author: Dan Oates (WPI Class of 2020)
     
     properties (SetAccess = protected)
@@ -13,8 +14,8 @@ classdef (Abstract) CmdSrc < handle
             %   Construct command source
             %   
             %   Inputs:
-            %   - model = UAV model [UAV.Model]
-            %   - params = Flight params [UAV.Params]
+            %   - model = UAV model [uav.Model]
+            %   - params = Flight params [uav.Params]
             obj.model = model;
             obj.params = params;
         end
@@ -25,7 +26,7 @@ classdef (Abstract) CmdSrc < handle
         %[cmd, time] = GET_CMD(obj) Get commands and time
         %   
         %   Outputs:
-        %   - cmd = UAV command [UAV.State.Cmd]
+        %   - cmd = UAV command [uav.state.Cmd]
         %   - time = Time [s]
         
         stop = get_stop(obj)
@@ -43,7 +44,7 @@ classdef (Abstract) CmdSrc < handle
             %   - ang_x = Array of roll [rad]
             %   
             %   Outputs:
-            %   - quat_ = Array of Quat
+            %   - quat_ = Array of quat [quat.Quat]
             import('quat.Quat');
             N = length(ang_z);
             quat_(1, N) = Quat();

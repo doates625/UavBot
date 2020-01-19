@@ -30,9 +30,9 @@ classdef Log < handle
             %   obj = LOG('recent') Loads most recent log from mat file
             
             % Imports
-            import('UAV.State.State');
-            import('UAV.State.Cmd');
-            import('UAV.Logging.Log');
+            import('uav.state.State');
+            import('uav.state.Cmd');
+            import('uav.logging.Log');
             
             % File management
             if nargin < 2
@@ -226,7 +226,7 @@ classdef Log < handle
             %   Generate angle control plots in new figure
             
             % Imports
-            import('UAV.Model');
+            import('uav.Model');
             
             % Compute angular errors and thrusts
             axis_lbls = {'x', 'y', 'z'};

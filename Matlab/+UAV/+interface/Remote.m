@@ -1,4 +1,4 @@
-classdef Remote < UAV.Interfaces.Interface
+classdef Remote < uav.interface.Interface
     %REMOTE Bluetooth remote control for UAV
     %   Author: Dan Oates (WPI Class of 2020)
     
@@ -21,22 +21,24 @@ classdef Remote < UAV.Interfaces.Interface
             %   Construct UAV remote
             %   
             %   Inputs:
-            %   - model = UAV model [UAV.Model]
-            %   - params = Flight params [UAV.Params]
+            %   - model = UAV model [uav.Model]
+            %   - params = Flight params [uav.Params]
             %   - bt_name = Device Bluetooth name [char]
             
             % Imports
-            import('UAV.State.Cmd');
+            import('uav.state.Cmd');
+            import('uav.Params');
+            import('uav.Model');
             import('serial_com.make_bluetooth');
             import('serial_com.SerialServer');
             
             % Default args
             if nargin < 3, bt_name = 'UavBot'; end
-            if nargin < 2, params = UAV.Params(); end
-            if nargin < 1, model = UAV.Model(); end
+            if nargin < 2, params = Params(); end
+            if nargin < 1, model = Model(); end
             
             % Superconstructor
-            obj@UAV.Interfaces.Interface(model, params);
+            obj@uav.interface.Interface(model, params);
 
             % Set up serial server
             bluetooth_ = make_bluetooth(bt_name);
@@ -59,10 +61,10 @@ classdef Remote < UAV.Interfaces.Interface
             %   Send commands and get new state
             %   
             %   Inputs:
-            %   - cmd = UAV command [UAV.State.Cmd]
+            %   - cmd = UAV command [uav.state.Cmd]
             %   
             %   Outputs:
-            %   - state = UAV state [UAV.State.State]
+            %   - state = UAV state [uav.state.State]
             
             % Imports
             import('timing.Timer');
@@ -178,8 +180,8 @@ classdef Remote < UAV.Interfaces.Interface
             %   - State enum cmd [uint8]
             
             % Imports
-            import('UAV.State.State');
-            import('UAV.State.Enum');
+            import('uav.state.State');
+            import('uav.state.Enum');
             import('serial_com.Struct');
             import('quat.Quat');
             

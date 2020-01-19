@@ -4,7 +4,7 @@ function print_logs()
     %   Author: Dan Oates (WPI Class of 2020)
     
     % Imports
-    import('UAV.Logging.Log');
+    import('uav.logging.Log');
     
     % Initial printout
     clc

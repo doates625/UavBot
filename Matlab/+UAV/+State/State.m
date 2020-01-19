@@ -3,11 +3,11 @@ classdef State < handle
     %   Author: Dan Oates (WPI Class of 2020)
     
     properties (SetAccess = protected)
-        ang_pos;    % Orientation [Quat]
+        ang_pos;    % Orientation [quat.Quat]
         ang_vel;    % Local angular velocity [rad/s]
         lin_acc;    % Global linear acceleration [m/s^2]
         thr_props;  % Prop throttles [0, 1]
-        enum;       % State machine enum [UAV.State.Enum]
+        enum;       % State machine enum [uav.state.Enum]
     end
     
     methods (Access = public)
@@ -15,18 +15,22 @@ classdef State < handle
             %obj = STATE(ang_pos, ang_vel, lin_acc, thr_props, state)
             %   Construct custom UAV state
             %   Inputs:
-            %       ang_pos = Orientation [Quat]
+            %       ang_pos = Orientation [quat.Quat]
             %       ang_vel = Local angular velocity [rad/s]
             %       lin_acc = Global linear acceleration [m/s^2]
             %       thr_prop = Prop throttles [0, 1]
-            %       enum = State machine enum [UAV.State.Enum]
+            %       enum = State machine enum [uav.state.Enum]
+            
+            % Imports
+            import('uav.state.Enum');
+            import('quat.Quat');
             
             % Default args
-            if nargin < 5, enum = UAV.State.Enum.Disabled; end
+            if nargin < 5, enum = Enum.Disabled; end
             if nargin < 4, thr_props = zeros(4, 1); end
             if nargin < 3, lin_acc = zeros(3, 1); end
             if nargin < 2, ang_vel = zeros(3, 1); end
-            if nargin < 1, ang_pos = quat.Quat(); end
+            if nargin < 1, ang_pos = Quat(); end
             
             % Copy states
             obj.ang_pos = pos_w(ang_pos);

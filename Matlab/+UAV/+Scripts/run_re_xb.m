@@ -7,9 +7,9 @@ function log = run_re_xb()
 %   Author: Dan Oates (WPI Class of 2020)
 
 % Imports
-import('UAV.Interfaces.Remote');
-import('UAV.CmdSrcs.Xbox');
-import('UAV.Scripts.run');
+import('uav.interfaces.Remote');
+import('uav.cmd_src.Xbox');
+import('uav.scripts.run');
 
 % Function
 clc

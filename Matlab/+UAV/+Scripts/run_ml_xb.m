@@ -7,9 +7,9 @@ function log = run_ml_xb()
 %   Author: Dan Oates (WPI Class of 2020)
 
 % Imports
-import('UAV.Interfaces.Sims.Matlab');
-import('UAV.CmdSrcs.Xbox');
-import('UAV.Scripts.run');
+import('uav.interface.sim.Matlab');
+import('uav.cmd_src.Xbox');
+import('uav.scripts.run');
 
 % Function
 clc

@@ -32,8 +32,8 @@ classdef Params < handle
             %   Otherwise, file will be created with default params
             
             % Imports
-            import('UAV.Model');
-            import('UAV.quat_gains');
+            import('uav.Model');
+            import('uav.quat_gains');
             
             % File name
             if nargin < 1
