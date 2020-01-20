@@ -15,8 +15,9 @@ import('uav.scripts.run');
 clc
 instrreset
 uav = Embedded();
-cmd_src = TimeSeq();
+cmd_src = TimeSeq(uav);
 run_gui = true;
-log = run(uav, cmd_src, run_gui);
+save_log = false;
+log = run(uav, cmd_src, run_gui, save_log);
 
 end

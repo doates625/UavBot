@@ -12,20 +12,18 @@ classdef Xbox < uav.cmd_src.CmdSrc
     properties (Access = protected)
         xbox;       % Xbox controller [Xbox360]
         ang_z_int;  % Yaw cmd integrator [Integrator]
-        thr_range;  % Throttle range [0, 1]
         enum_cmd;   % State machine enum cmd [UAV.State.Enum]
         timer;      % Timer object [Timer]
         first_get;  % First get flag [logical]
     end
     
     methods (Access = public)
-        function obj = Xbox(model, params, vel_z_max, ang_y_max, ang_x_max)
-            %obj = XBOX(model, params, vel_z_max, ang_y_max, ang_x_max)
+        function obj = Xbox(uav, vel_z_max, ang_y_max, ang_x_max)
+            %obj = XBOX(uav, vel_z_max, ang_y_max, ang_x_max)
             %   Construct Xbox UAV controller
             %   
             %   Inputs:
-            %   - model = UAV model [uav.Model]
-            %   - params = Flight params [uav.Params]
+            %   - uav = UAV interface [uav.interface.Interface]
             %   - vel_z_max = Max yaw rate [rad/s]
             %   - ang_y_max = Max pitch angle [rad]
             %   - ang_x_max = Max roll angle [rad]
@@ -34,27 +32,25 @@ classdef Xbox < uav.cmd_src.CmdSrc
             import('uav.Params');
             import('uav.Model');
             import('uav.state.Enum');
+            import('game_ctrl.Xbox360');
             import('controls.Integrator');
             import('timing.Timer');
             
             % Default args
-            if nargin < 5, ang_x_max = deg2rad(20); end
-            if nargin < 4, ang_y_max = deg2rad(20); end
-            if nargin < 3, vel_z_max = pi/4; end
-            if nargin < 2, params = Params(); end
-            if nargin < 1, model = Model(); end
+            if nargin < 4, ang_x_max = deg2rad(20); end
+            if nargin < 3, ang_y_max = deg2rad(20); end
+            if nargin < 2, vel_z_max = pi/4; end
             
             % Init properties
-            obj@uav.cmd_src.CmdSrc(model, params);
+            obj@uav.cmd_src.CmdSrc(uav);
             obj.vel_z_max = vel_z_max;
             obj.ang_y_max = ang_y_max;
             obj.ang_x_max = ang_x_max;
-            obj.xbox = game_ctrl.Xbox360();
+            obj.xbox = Xbox360();
             obj.xbox.set_dz('LX', 0.08);
             obj.xbox.set_dz('LY', 0.08);
             obj.xbox.set_dz('RX', 0.05);
             obj.ang_z_int = Integrator();
-            obj.thr_range = params.thr_max - params.thr_min;
             obj.enum_cmd = Enum.Disabled;
             obj.timer = Timer();
             obj.first_get = true;
@@ -80,9 +76,11 @@ classdef Xbox < uav.cmd_src.CmdSrc
             ang_pos = obj.eul_to_quat(ang_z, ang_y, ang_x);
            
             % Parse linear throttle cmd
-            thr_lin = obj.params.thr_min + ...
-                obj.thr_range * -obj.xbox.axis('Trig');
-            thr_lin = clamp(thr_lin, obj.params.thr_min, obj.params.thr_max);
+            thr_min = obj.uav.params.thr_min;
+            thr_max = obj.uav.params.thr_max;
+            thr_rng = thr_max - thr_min;
+            thr_lin = thr_min + thr_rng * -obj.xbox.axis('Trig');
+            thr_lin = clamp(thr_lin, thr_min, thr_max);
             
             % Parse state command
             if obj.xbox.btn('B') || obj.get_stop()

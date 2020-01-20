@@ -14,36 +14,25 @@ classdef TimeSeq < uav.cmd_src.CmdSrc
     end
     
     methods (Access = public)
-        function obj = TimeSeq(model, params, time, ang_pos, thr_lin)
+        function obj = TimeSeq(uav, time, ang_pos, thr_lin)
             %TIMESEQ Construct command time sequence
             %   
-            %   obj = TIMESEQ(model, params, time, ang_pos, thr_lin)
+            %   obj = TIMESEQ(uav, time, ang_pos, thr_lin)
             %       Construct custom sequence
             %       
             %       Inputs:
-            %       - model = UAV model [uav.Model]
-            %       - params = Flight params [uav.Params]
+            %       - uav = UAV interface [uav.interface.Interface]
             %       - time = Time of cmds [s]
             %       - ang_pos = Angular position cmds [quat.Quat]
             %       - thr_lin = Linear throttle cmds [0, 1]
-            %   
-            %   obj = TIMESEQ(model) Construct default sequence with given model
-            %   
-            %   obj = TIMESEQ() Construct default sequence with default model
-            
-            % Imports
-            import('uav.Params');
-            import('uav.Model');
             
             % Superconstructor
-            if nargin < 2, params = Params(); end
-            if nargin < 1, model = Model(); end
-            obj = obj@uav.cmd_src.CmdSrc(model, params);
+            obj = obj@uav.cmd_src.CmdSrc(uav);
             
             % Default commands
             if nargin < 5
                 % Timesteps
-                time_del = 1 / model.f_ctrl;
+                time_del = 1 / uav.model.f_ctrl;
                 time = 0:time_del:10;
                 n = length(time);
                 
@@ -61,7 +50,7 @@ classdef TimeSeq < uav.cmd_src.CmdSrc
                 ang_pos = obj.eul_to_quat(ang_z, ang_y, ang_x);
                 
                 % Throttle cmd
-                thr_lin = obj.params.thr_max * ones(size(time));
+                thr_lin = obj.uav.params.thr_max * ones(size(time));
             end
             
             % Copy args

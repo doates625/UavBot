@@ -18,12 +18,6 @@ import('uav.interface.sim.Matlab');
 import('uav.Gui');
 import('uav.logging.Log');
 
-% Default args
-if nargin < 4, save_log = false; end
-if nargin < 3, run_gui = true; end
-if nargin < 2, cmd_src = Xbox(); end
-if nargin < 1, uav = Matlab(); end
-
 % Initializations
 if run_gui, gui = Gui(uav); end
 log = Log(uav);

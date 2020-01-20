@@ -15,9 +15,10 @@ import('uav.scripts.run');
 clc
 instrreset
 uav = Remote();
-cmd_src = Xbox();
+cmd_src = Xbox(uav);
 run_gui = true;
 save_log = true;
 log = run(uav, cmd_src, run_gui, save_log);
+uav.params.save();
 
 end

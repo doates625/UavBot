@@ -4,20 +4,17 @@ classdef (Abstract) CmdSrc < handle
     %   Author: Dan Oates (WPI Class of 2020)
     
     properties (SetAccess = protected)
-        model;  % UAV model [UAV.Model]
-        params; % Flight params [UAV.Params]
+        uav;    % UAV interface [uav.interface.Interface]
     end
     
     methods (Access = public)
-        function obj = CmdSrc(model, params)
+        function obj = CmdSrc(uav)
             %obj = CMDSRC(model, params)
             %   Construct command source
             %   
             %   Inputs:
-            %   - model = UAV model [uav.Model]
-            %   - params = Flight params [uav.Params]
-            obj.model = model;
-            obj.params = params;
+            %   - uav = UAV interface [uav.interface.Interface]
+            obj.uav = uav;
         end
     end
     
