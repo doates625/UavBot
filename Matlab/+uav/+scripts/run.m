@@ -38,6 +38,9 @@ while true
     end
 end
 
+% Close GUI
+if run_gui, delete(gui); end
+
 % Log processing
 log.trim();
 if save_log, log.save(); end
