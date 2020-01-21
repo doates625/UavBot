@@ -17,8 +17,8 @@ instrreset
 uav = Remote();
 cmd_src = Xbox(uav);
 run_gui = true;
-save_log = true;
-log = run(uav, cmd_src, run_gui, save_log);
+gen_log = false;
+log = run(uav, cmd_src, run_gui, gen_log);
 uav.params.save();
 
 end
