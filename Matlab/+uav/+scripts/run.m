@@ -1,14 +1,14 @@
-function log = run(uav, cmd_src, run_gui, save_log)
-%log = RUN(uav, cmd_src, run_gui, save_log) Run UAV interface
+function log = run(uav, cmd_src, run_gui, gen_log)
+%log = RUN(uav, cmd_src, run_gui, gen_log) Run UAV interface
 %   
 %   Inputs:
 %   - uav = UAV interface [UAV.Interfaces.Interface]
 %   - cmd_src = Command source [UAV.CmdSrcs.CmdSrc]
 %   - run_gui = Flag to run GUI [logical]
-%   - save_log = Flag to save log file [logical]
+%   - gen_log = Flag to generate log file [logical]
 %   
 %   Outputs:
-%   - log = Flight log object [UAV.Log]
+%   - log = Flight log [UAV.Log]
 %   
 %   Author: Dan Oates (WPI Class of 2020)
 
@@ -20,7 +20,7 @@ import('uav.logging.Log');
 
 % Initializations
 if run_gui, gui = Gui(uav); end
-log = Log(uav);
+if gen_log, log = Log(uav); end
 
 % Command loop
 while true
@@ -29,8 +29,8 @@ while true
     [cmd, time] = cmd_src.get_cmd();
     uav.update(cmd);
     if run_gui, gui.update(time); end
-    log.update(time);
-    drawnow
+    if gen_log, log.update(time); end
+    % drawnow
     
     % Exit condition
     if cmd_src.get_stop()
@@ -41,9 +41,13 @@ end
 % Close GUI
 if run_gui, delete(gui); end
 
-% Log processing
-log.trim();
-if save_log, log.save(); end
-log.plot();
+% Log post-processing
+if gen_log
+    log.trim();
+    log.save();
+    log.plot();
+else
+    log = [];
+end
 
 end

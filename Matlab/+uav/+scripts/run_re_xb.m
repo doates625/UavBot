@@ -7,7 +7,7 @@ function log = run_re_xb()
 %   Author: Dan Oates (WPI Class of 2020)
 
 % Imports
-import('uav.interfaces.Remote');
+import('uav.interface.Remote');
 import('uav.cmd_src.Xbox');
 import('uav.scripts.run');
 
@@ -17,8 +17,8 @@ instrreset
 uav = Remote();
 cmd_src = Xbox(uav);
 run_gui = true;
-save_log = true;
-log = run(uav, cmd_src, run_gui, save_log);
+gen_log = false;
+log = run(uav, cmd_src, run_gui, gen_log);
 uav.params.save();
 
 end
