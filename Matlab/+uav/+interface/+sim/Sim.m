@@ -3,6 +3,7 @@ classdef (Abstract) Sim < uav.interface.Interface
     %   Author: Dan Oates (WPI Class of 2020)
     
     properties (Access = protected)
+        I_mat;  % Inertia matrix [kg*m^2]
         A_ang;  % Angular accel matrix [(rad/s^2)/thr]
         A_lin;  % Linear accel matrix [(m/s^2)/thr]
     end
@@ -20,12 +21,12 @@ classdef (Abstract) Sim < uav.interface.Interface
             obj@uav.interface.Interface(model, params);
             
             % Acceleration matrices
-            I_mat = diag([model.inr_xx, model.inr_yy, model.inr_zz]);
+            obj.I_mat = diag([model.inr_xx, model.inr_yy, model.inr_zz]);
             D_mat = [...
                 [+model.rad_x, -model.rad_x, +model.rad_x, -model.rad_x]; ...
                 [-model.rad_y, -model.rad_y, +model.rad_y, +model.rad_y]; ...
                 [+model.rad_z, -model.rad_z, -model.rad_z, +model.rad_z]];
-            obj.A_ang = model.f_max * inv(I_mat) * D_mat;
+            obj.A_ang = model.f_max * inv(obj.I_mat) * D_mat;
             obj.A_lin = zeros(3, 4);
             obj.A_lin(3, :) = model.f_max / model.mass;
         end
@@ -58,8 +59,9 @@ classdef (Abstract) Sim < uav.interface.Interface
             end
             
             % Angular dynamics
-            ang_acc = obj.A_ang * thr_props;
             ang_vel = obj.state.ang_vel;
+            ang_acc = obj.A_ang * thr_props - ...
+                obj.I_mat \ cross(ang_vel, obj.I_mat * ang_vel);
             norm_ang_vel = norm(ang_vel);
             if norm_ang_vel > 0
                 theta = norm_ang_vel * obj.model.t_ctrl;
