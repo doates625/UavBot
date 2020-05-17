@@ -17,7 +17,7 @@ instrreset
 uav = Embedded();
 cmd_src = TimeSeq(uav);
 run_gui = true;
-save_log = false;
-log = run(uav, cmd_src, run_gui, save_log);
+gen_log = false;
+log = run(uav, cmd_src, run_gui, gen_log);
 
 end

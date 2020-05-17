@@ -99,8 +99,8 @@ classdef Log < handle
             %   Crop log in time to range [t_min, t_max]
             
             % Compute endpoints
-            i_min = find(obj.log_time > t_min, 1, 'first');
-            i_max = find(obj.log_time > t_max, 1, 'first');
+            i_min = find(obj.times > t_min, 1, 'first');
+            i_max = find(obj.times > t_max, 1, 'first');
             
             % Trim logs to endpoints
             obj.states = obj.states(i_min:i_max);
@@ -108,7 +108,7 @@ classdef Log < handle
             obj.times = obj.times(i_min:i_max);
             
             % Update log length
-            obj.length_ = length(obj.time);
+            obj.length_ = length(obj.times);
         end
         
         function obj = cmt(obj, comment)
